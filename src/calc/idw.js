@@ -1,5 +1,7 @@
 /**
  * 反距离平方权重法
+ * @author kongkongbuding
+ * @since 2019.08.08
  * @param {数据点} points
  * @param {网格点} pointGrid
  * @param {权重系数} pow

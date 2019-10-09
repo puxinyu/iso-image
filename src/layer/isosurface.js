@@ -1,5 +1,7 @@
 /**
  * 绘制等值面
+ * @author kongkongbuding
+ * @since 2019.08.08
  * @param {isoimage option} opt
  * @param {网格} pointGrid
  * @param {} isosurface

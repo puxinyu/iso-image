@@ -1,5 +1,7 @@
 /**
  * 绘制等值线
+ * @author kongkongbuding
+ * @since 2019.08.08
  * @param {isoimage option} opt
  * @param {线数据} lines
  * @param {图片配置 width: 图片宽度, filter 过滤筛选} config

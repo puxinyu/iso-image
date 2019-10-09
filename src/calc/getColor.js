@@ -1,5 +1,7 @@
 /**
  * 获取色值
+ * @author kongkongbuding
+ * @since 2019.08.08
  * @param {颜色等级} arr 
  * @param {值} v 
  * @param {是否渐变} gradient 

@@ -1,9 +1,3 @@
-const newSpace = function(d) {
-  return JSON.parse(JSON.stringify(d))
-}
-const samePoint = function(a, b) {
-  return a[0] == b[0] && a[1] == b[1]
-}
 /**
  * 查询封闭多边形
  * @param {等值线} catchLine 
@@ -14,6 +8,7 @@ const samePoint = function(a, b) {
  * @param {查询限制 用于方向查询} limit 
  * @param {查询分支} nArr 
  */
+import { newSpace, samePoint } from '../util/common'
 var search = function(catchLine, extent, side, arr, d, limit, nArr) {
   nArr = nArr || []
   var tp = arr[arr.length - 1]

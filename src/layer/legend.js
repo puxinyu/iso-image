@@ -1,5 +1,7 @@
 /**
  * 绘制图例
+ * @author kongkongbuding
+ * @since 2019.08.08
  * @param {等级数组} level
  * @param {} config
  */

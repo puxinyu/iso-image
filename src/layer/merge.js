@@ -1,12 +1,11 @@
-
-const O = Object.prototype.toString
-const isArray = function(v) { return O.call(v) === '[object Array]' }
 /**
- * 
+ * @author kongkongbuding
+ * @since 2019.08.08
  * @param {isoimage 对象数组} isoimages 
  * @param {配置项} opt 
  * @param {回调} callBack 
  */
+import { isArray } from '../util/common'
 export default function(isoimages, opt, callBack) {
   var imgs = isArray(isoimages) ? isoimages : []
   var option = Object.assign({}, {

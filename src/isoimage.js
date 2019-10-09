@@ -1,6 +1,7 @@
 /**
  * 等值图生成
  * @author kongkongbuding
+ * @since 2019.08.08
  */
 import idw from './calc/idw'
 import kriging from './calc/kriging'

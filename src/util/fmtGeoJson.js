@@ -1,12 +1,10 @@
 
-const newSpace = function(d) {
-  return JSON.parse(JSON.stringify(d))
-}
 /**
  * [lng, lat] => [lat, lng]
  * @param {经纬度数组} latlngs 
  * @param {数组层级} deep 
  */
+import { newSpace } from './common'
 export const fmtLatLng = function(latlngs, deep, x, y) {
   if (y === void 0) y = 1
   if (x === void 0) x = 0

@@ -1,3 +1,9 @@
+/**
+ * leaflet 失量叠加图层
+ * @author kongkongbuding
+ * @since 2019.08.08
+ * @param {*} config 
+ */
 export const IsoLayer = function(config) {
   if (!L.IsoImageCanvasLayer) {
     L.IsoImageCanvasLayer = L.Canvas.extend({

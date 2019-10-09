@@ -1,14 +1,12 @@
 /**
  * 图片叠加 透明度处理
+ * @author kongkongbuding
+ * @since 2019.08.08
  * @param {canvas数组} cavs
  * @param {opacity: 透明度} config
  */
 
-const O = Object.prototype.toString
-const isArray = function(v) {
-  return O.call(v) === '[object Array]'
-}
-
+import { isArray } from '../util/common'
 export default function(cavs, option, config) {
   if (!cavs[0]) return false
   config = config || {}

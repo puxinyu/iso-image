@@ -105,6 +105,8 @@
 
   /**
    * 反距离平方权重法
+   * @author kongkongbuding
+   * @since 2019.08.08
    * @param {数据点} points
    * @param {网格点} pointGrid
    * @param {权重系数} pow
@@ -505,15 +507,17 @@
 
   /**
    * 点在面内
+   * @author kongkongbuding
+   * @since 2019.08.08
    * @param {点} point 
    * @param {面} polygon 
    */
   const hitArea = function(point, polygon){   
-    var x = point[0], y = point[1];  
+    var x = point[0], y = point[1];
     var inside = false;
     for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {  
         var xi = polygon[i][0], yi = polygon[i][1];  
-        var xj = polygon[j][0], yj = polygon[j][1];  
+        var xj = polygon[j][0], yj = polygon[j][1];
 
         var intersect = ((yi > y) != (yj > y))  
                 && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
@@ -525,9 +529,20 @@
   const newSpace = function(d) {
     return JSON.parse(JSON.stringify(d))
   };
+
   const samePoint = function(a, b) {
     return a[0] == b[0] && a[1] == b[1]
   };
+
+  const dist = function (a, b) {
+    return Math.abs(a - b)
+  };
+
+  const O = Object.prototype.toString;
+  const isArray = function(v) {
+    return O.call(v) === '[object Array]'
+  };
+
   /**
    * 查询封闭多边形
    * @param {等值线} catchLine 
@@ -597,6 +612,8 @@
 
   /**
    * 获取色值
+   * @author kongkongbuding
+   * @since 2019.08.08
    * @param {颜色等级} arr 
    * @param {值} v 
    * @param {是否渐变} gradient 
@@ -626,13 +643,16 @@
     return color
   };
 
+  /**
+   * 区块计算
+   * @author kongkongbuding
+   * @since 2019.08.08
+   */
+
   const abs$1 = Math.abs;
   const max$1 = Math.max;
   const min$1 = Math.min;
   const floor$1 = Math.floor;
-  const dist = function (a, b) {
-    return abs$1(a - b)
-  };
   const calcDir = function (p, ex) {
     var t = 0;
     var dir = max$1(dist(ex[0], ex[2]), dist(ex[1], ex[3]));
@@ -645,12 +665,7 @@
     }
     return 'lbrt'.charAt(t)
   };
-  const samePoint$1 = function(a, b) {
-    return a[0] == b[0] && a[1] == b[1]
-  };
-  const newSpace$1 = function(d) {
-    return JSON.parse(JSON.stringify(d))
-  };
+
   /**
    * 
    * @param {等值线} lines 
@@ -678,7 +693,7 @@
         var first = l[0];
         var last = l[l.length - 1];
         // 闭环
-        if (samePoint$1(first, last)) {
+        if (samePoint(first, last)) {
           close.push({
             coor: l,
             properties: f.properties,
@@ -749,7 +764,7 @@
     }
     
     // 生成区块
-    var remain = newSpace$1(close);
+    var remain = newSpace(close);
     var buildItem = [];
     var buildIndx = [];
     var PIndex = [];
@@ -762,9 +777,7 @@
         var child = r.child;
         var iT = 1;
         for (var jl = child.length,  j = jl - 1; j > -1; j --) {
-          if (buildIndx.indexOf(child[j]) == -1) {
-            iT = 0;
-          }
+          if (buildIndx.indexOf(child[j]) == -1) iT = 0;
         }
         if (iT) {
           var nC = [];
@@ -828,14 +841,8 @@
         _cp[target] = max$1(cp[target] - dx, np[target]);
         var va = pg[gi].properties.val;
         var vb = pg[gi + di].properties.val;
-        if (hitArea(_cp, c.coor)) {
-          val = va + (vb - va) * (abs$1(_cp[target] - pg[gi].geometry.coordinates[target]) / _dx);
-        } else {
-          _cp[target] = min$1(cp[target] + dx * 2, nep[target]);
-          if (hitArea(_cp, c.coor)) {
-            val = va + (vb - va) * (abs$1(_cp[target] - pg[gi].geometry.coordinates[target]) / _dx);
-          }
-        }
+        if (!hitArea(_cp, c.coor)) _cp[target] = min$1(cp[target] + dx * 2, nep[target]);
+        if (hitArea(_cp, c.coor)) val = va + (vb - va) * (abs$1(_cp[target] - pg[gi].geometry.coordinates[target]) / _dx);
       } else if (pg[gi]) {
         val = pg[gi].properties.val;
       }
@@ -864,6 +871,8 @@
 
   /**
    * 绘制图例
+   * @author kongkongbuding
+   * @since 2019.08.08
    * @param {等级数组} level
    * @param {} config
    */
@@ -972,6 +981,8 @@
 
   /**
    * 绘制等值面
+   * @author kongkongbuding
+   * @since 2019.08.08
    * @param {isoimage option} opt
    * @param {网格} pointGrid
    * @param {} isosurface
@@ -1032,6 +1043,8 @@
 
   /**
    * 绘制等值线
+   * @author kongkongbuding
+   * @since 2019.08.08
    * @param {isoimage option} opt
    * @param {线数据} lines
    * @param {图片配置 width: 图片宽度, filter 过滤筛选} config
@@ -1086,15 +1099,11 @@
 
   /**
    * 图片叠加 透明度处理
+   * @author kongkongbuding
+   * @since 2019.08.08
    * @param {canvas数组} cavs
    * @param {opacity: 透明度} config
    */
-
-  const O = Object.prototype.toString;
-  const isArray = function(v) {
-    return O.call(v) === '[object Array]'
-  };
-
   function mix(cavs, option, config) {
     if (!cavs[0]) return false
     config = config || {};
@@ -1144,14 +1153,6 @@
     return canvas
   }
 
-  const newSpace$2 = function(d) {
-    return JSON.parse(JSON.stringify(d))
-  };
-  /**
-   * [lng, lat] => [lat, lng]
-   * @param {经纬度数组} latlngs 
-   * @param {数组层级} deep 
-   */
   const fmtLatLng = function(latlngs, deep, x, y) {
     if (y === void 0) y = 1;
     if (x === void 0) x = 0;
@@ -1164,7 +1165,7 @@
   };
 
   const fmtGeoJson = function(data) {
-    var d = newSpace$2(data);
+    var d = newSpace(data);
     for (var i = 0, len = d.features.length; i < len; i++) {
       var coor = d.features[i].geometry.coordinates;
       d.features[i].geometry.coordinates = fmtLatLng(coor, 2);
@@ -1172,6 +1173,12 @@
     return d
   };
 
+  /**
+   * leaflet 失量叠加图层
+   * @author kongkongbuding
+   * @since 2019.08.08
+   * @param {*} config 
+   */
   const IsoLayer = function(config) {
     if (!L.IsoImageCanvasLayer) {
       L.IsoImageCanvasLayer = L.Canvas.extend({
@@ -1257,6 +1264,12 @@
     return new L.ClipCanvasLayer(config)
   };
 
+  /**
+   * leaflet 图例
+   * @author kongkongbuding
+   * @since 2019.08.08
+   * @param {*} config 
+   */
   function leafletLegend(config) {
     if (!L.Control.IsoLegendCortrol) {
       L.Control.IsoLegendCortrol = L.Control.extend({
@@ -1267,7 +1280,7 @@
         initialize: function(options) {
           L.Util.extend(this.options, options);
         },
-        onAdd: function(map) {
+        onAdd: function() {
           this._container = L.DomUtil.create('div', 'leaflet-control-iso-legend');
           this._container.appendChild(this.options.canvas);
           return this._container
@@ -1277,6 +1290,11 @@
     return new L.Control.IsoLegendCortrol(config)
   }
 
+  /**
+   * leaflet 图片叠加
+   * @author kongkongbuding
+   * @since 2019.08.08 
+   */
   function leafletImage(d, type, layer, config) {
     if (!d || !layer) return
     var group = [];
@@ -1300,6 +1318,12 @@
     return group
   }
 
+  /**
+   * 格式化等级
+   * @author kongkongbuding
+   * @since 2019.08.08
+   * @param {*} level 
+   */
   const fmtLevel = function(level) {
     for (var i = 0, len = level.length; i < len; i++) {
       var color = level[i].color;
@@ -1310,16 +1334,15 @@
     return level
   };
 
-  const O$1 = Object.prototype.toString;
-  const isArray$1 = function(v) { return O$1.call(v) === '[object Array]' };
   /**
-   * 
+   * @author kongkongbuding
+   * @since 2019.08.08
    * @param {isoimage 对象数组} isoimages 
    * @param {配置项} opt 
    * @param {回调} callBack 
    */
   function merge(isoimages, opt, callBack) {
-    var imgs = isArray$1(isoimages) ? isoimages : [];
+    var imgs = isArray(isoimages) ? isoimages : [];
     var option = Object.assign({}, {
       width: 800,
       height: 600,
@@ -3076,6 +3099,7 @@
   /**
    * 等值图生成
    * @author kongkongbuding
+   * @since 2019.08.08
    */
 
   const name = 'IsoImage';
@@ -3083,8 +3107,8 @@
   const units = 'degrees';
   const sigma2 = 0.1;
   const alpha = 100;
-  const O$2 = Object.prototype.toString;
-  const isArray$2 = function(v) { return O$2.call(v) === '[object Array]' };
+  const O$1 = Object.prototype.toString;
+  const isArray$1 = function(v) { return O$1.call(v) === '[object Array]' };
   const isIE = 'ActiveXObject' in window;
   const min$2 = Math.min;
   const max$2 = Math.max;
@@ -3245,7 +3269,7 @@
         v = [],
         x = [],
         y = [];
-      if (isArray$2(points)) {
+      if (isArray$1(points)) {
         for (var i = 0, len = points.length; i < len; i++) {
           if (points[i][key.v] == void 0) continue
           var _v = points[i][key.v];

@@ -1,15 +1,17 @@
-
+/**
+ * 区块计算
+ * @author kongkongbuding
+ * @since 2019.08.08
+ */
 import hitArea from './hitArea'
 import search from './search'
 import getColor from './getColor'
+import { newSpace, samePoint, dist } from '../util/common'
 
 const abs = Math.abs
 const max = Math.max
 const min = Math.min
 const floor = Math.floor
-const dist = function (a, b) {
-  return abs(a - b)
-}
 const calcDir = function (p, ex) {
   var t = 0
   var dir = max(dist(ex[0], ex[2]), dist(ex[1], ex[3]))
@@ -22,12 +24,7 @@ const calcDir = function (p, ex) {
   }
   return 'lbrt'.charAt(t)
 }
-const samePoint = function(a, b) {
-  return a[0] == b[0] && a[1] == b[1]
-}
-const newSpace = function(d) {
-  return JSON.parse(JSON.stringify(d))
-}
+
 /**
  * 
  * @param {等值线} lines 
@@ -139,9 +136,7 @@ export default function(lines, extent, pointGrid, level) {
       var child = r.child
       var iT = 1
       for (var jl = child.length,  j = jl - 1; j > -1; j --) {
-        if (buildIndx.indexOf(child[j]) == -1) {
-          iT = 0
-        }
+        if (buildIndx.indexOf(child[j]) == -1) iT = 0
       }
       if (iT) {
         var nC = []
@@ -205,14 +200,8 @@ export default function(lines, extent, pointGrid, level) {
       _cp[target] = max(cp[target] - dx, np[target])
       var va = pg[gi].properties.val
       var vb = pg[gi + di].properties.val
-      if (hitArea(_cp, c.coor)) {
-        val = va + (vb - va) * (abs(_cp[target] - pg[gi].geometry.coordinates[target]) / _dx)
-      } else {
-        _cp[target] = min(cp[target] + dx * 2, nep[target])
-        if (hitArea(_cp, c.coor)) {
-          val = va + (vb - va) * (abs(_cp[target] - pg[gi].geometry.coordinates[target]) / _dx)
-        }
-      }
+      if (!hitArea(_cp, c.coor)) _cp[target] = min(cp[target] + dx * 2, nep[target])
+      if (hitArea(_cp, c.coor)) val = va + (vb - va) * (abs(_cp[target] - pg[gi].geometry.coordinates[target]) / _dx)
     } else if (pg[gi]) {
       val = pg[gi].properties.val
     }

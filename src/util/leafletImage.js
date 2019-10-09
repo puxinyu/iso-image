@@ -1,3 +1,8 @@
+/**
+ * leaflet 图片叠加
+ * @author kongkongbuding
+ * @since 2019.08.08 
+ */
 export default function(d, type, layer, config) {
   if (!d || !layer) return
   var group = []
