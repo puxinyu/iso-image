@@ -19,21 +19,21 @@ import merge from './layer/merge'
 import turfPointGrid from '@turf/point-grid'
 import turfIsolines from '@turf/isolines'
 
-const name = 'IsoImage'
-const picture = 'image/png'
-const units = 'degrees'
-const sigma2 = 0.1
-const alpha = 100
-const O = Object.prototype.toString
-const isArray = function(v) { return O.call(v) === '[object Array]' }
-const isIE = 'ActiveXObject' in window
-const min = Math.min
-const max = Math.max
-const abs = Math.abs
-const round = Math.round
-const flot = 1000000
+var name = 'IsoImage'
+var picture = 'image/png'
+var units = 'degrees'
+var sigma2 = 0.1
+var alpha = 100
+var O = Object.prototype.toString
+var isArray = function(v) { return O.call(v) === '[object Array]' }
+var isIE = 'ActiveXObject' in window
+var min = Math.min
+var max = Math.max
+var abs = Math.abs
+var round = Math.round
+var flot = 1000000
 
-const defaultKeyConfig = {
+var defaultKeyConfig = {
   x: 'x',
   y: 'y',
   v: 'v',
@@ -41,7 +41,7 @@ const defaultKeyConfig = {
   clipY: '1'
 }
 
-const existLeaflet = function() {
+var existLeaflet = function() {
   var l = 'L' in window
   if (!l) console.log('未加载leaflet')
   return l

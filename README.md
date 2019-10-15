@@ -6,8 +6,8 @@
 
 ## use
 
- * [demo1](http://47.95.1.229:8073/iso-image/map.html)        [代碼](./dist/map.html)
- * [demo2](http://47.95.1.229:8073/iso-image/index.html)      [代碼](./dist/index.html)
+ * [demo1](http://119.3.46.74:8999/iso-image/dist/map.html)        [代碼](./dist/map.html)
+ * [demo2](http://119.3.46.74:8999/iso-image/dist/index.html)      [代碼](./dist/index.html)
 
 ``` js
       npm install iso-image

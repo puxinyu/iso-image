@@ -5,7 +5,7 @@
  * @param {点} point 
  * @param {面} polygon 
  */
-const hitArea = function(point, polygon){   
+var hitArea = function(point, polygon){   
   var x = point[0], y = point[1]
   var inside = false
   for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {  

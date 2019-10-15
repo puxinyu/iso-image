@@ -8,11 +8,11 @@ import search from './search'
 import getColor from './getColor'
 import { newSpace, samePoint, dist } from '../util/common'
 
-const abs = Math.abs
-const max = Math.max
-const min = Math.min
-const floor = Math.floor
-const calcDir = function (p, ex) {
+var abs = Math.abs
+var max = Math.max
+var min = Math.min
+var floor = Math.floor
+var calcDir = function (p, ex) {
   var t = 0
   var dir = max(dist(ex[0], ex[2]), dist(ex[1], ex[3]))
   for (var i = 0; i < 4; i++) {

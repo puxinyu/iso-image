@@ -4,7 +4,7 @@
  * @since 2019.08.08
  * @param {*} config 
  */
-export const IsoLayer = function(config) {
+export var IsoLayer = function(config) {
   if (!L.IsoImageCanvasLayer) {
     L.IsoImageCanvasLayer = L.Canvas.extend({
       _initContainer: function () {
@@ -47,7 +47,7 @@ export const IsoLayer = function(config) {
   return new L.IsoImageCanvasLayer(config)
 }
 
-export const ClipLayer = function(config) {
+export var ClipLayer = function(config) {
   if (!L.ClipCanvasLayer) {
     L.ClipCanvasLayer = L.Canvas.extend({
       _initContainer: function () {

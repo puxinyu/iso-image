@@ -1,17 +1,17 @@
 
-export const newSpace = function(d) {
+export var newSpace = function(d) {
   return JSON.parse(JSON.stringify(d))
 }
 
-export const samePoint = function(a, b) {
+export var samePoint = function(a, b) {
   return a[0] == b[0] && a[1] == b[1]
 }
 
-export const dist = function (a, b) {
+export var dist = function (a, b) {
   return Math.abs(a - b)
 }
 
-const O = Object.prototype.toString
-export const isArray = function(v) {
+var O = Object.prototype.toString
+export var isArray = function(v) {
   return O.call(v) === '[object Array]'
 }

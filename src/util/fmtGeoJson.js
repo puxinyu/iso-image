@@ -5,7 +5,7 @@
  * @param {数组层级} deep 
  */
 import { newSpace } from './common'
-export const fmtLatLng = function(latlngs, deep, x, y) {
+export var fmtLatLng = function(latlngs, deep, x, y) {
   if (y === void 0) y = 1
   if (x === void 0) x = 0
   if (!deep) return [latlngs[y], latlngs[x]]
@@ -16,7 +16,7 @@ export const fmtLatLng = function(latlngs, deep, x, y) {
   return latlngs
 }
 
-const fmtGeoJson = function(data) {
+var fmtGeoJson = function(data) {
   var d = newSpace(data)
   for (var i = 0, len = d.features.length; i < len; i++) {
     var coor = d.features[i].geometry.coordinates

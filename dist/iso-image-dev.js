@@ -512,7 +512,7 @@
    * @param {点} point 
    * @param {面} polygon 
    */
-  const hitArea = function(point, polygon){   
+  var hitArea = function(point, polygon){   
     var x = point[0], y = point[1];
     var inside = false;
     for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {  
@@ -526,20 +526,20 @@
     return inside
   };
 
-  const newSpace = function(d) {
+  var newSpace = function(d) {
     return JSON.parse(JSON.stringify(d))
   };
 
-  const samePoint = function(a, b) {
+  var samePoint = function(a, b) {
     return a[0] == b[0] && a[1] == b[1]
   };
 
-  const dist = function (a, b) {
+  var dist = function (a, b) {
     return Math.abs(a - b)
   };
 
-  const O = Object.prototype.toString;
-  const isArray = function(v) {
+  var O = Object.prototype.toString;
+  var isArray = function(v) {
     return O.call(v) === '[object Array]'
   };
 
@@ -618,7 +618,7 @@
    * @param {值} v 
    * @param {是否渐变} gradient 
    */
-  const getColor = function(arr, v, gradient) {
+  var getColor = function(arr, v, gradient) {
     var color = false;
     for (var i = 0, len = arr.length; i < len; i++) {
       if (v < arr[i].value) {
@@ -649,11 +649,11 @@
    * @since 2019.08.08
    */
 
-  const abs$1 = Math.abs;
-  const max$1 = Math.max;
-  const min$1 = Math.min;
-  const floor$1 = Math.floor;
-  const calcDir = function (p, ex) {
+  var abs$1 = Math.abs;
+  var max$1 = Math.max;
+  var min$1 = Math.min;
+  var floor$1 = Math.floor;
+  var calcDir = function (p, ex) {
     var t = 0;
     var dir = max$1(dist(ex[0], ex[2]), dist(ex[1], ex[3]));
     for (var i = 0; i < 4; i++) {
@@ -1153,7 +1153,7 @@
     return canvas
   }
 
-  const fmtLatLng = function(latlngs, deep, x, y) {
+  var fmtLatLng = function(latlngs, deep, x, y) {
     if (y === void 0) y = 1;
     if (x === void 0) x = 0;
     if (!deep) return [latlngs[y], latlngs[x]]
@@ -1164,7 +1164,7 @@
     return latlngs
   };
 
-  const fmtGeoJson = function(data) {
+  var fmtGeoJson = function(data) {
     var d = newSpace(data);
     for (var i = 0, len = d.features.length; i < len; i++) {
       var coor = d.features[i].geometry.coordinates;
@@ -1179,7 +1179,7 @@
    * @since 2019.08.08
    * @param {*} config 
    */
-  const IsoLayer = function(config) {
+  var IsoLayer = function(config) {
     if (!L.IsoImageCanvasLayer) {
       L.IsoImageCanvasLayer = L.Canvas.extend({
         _initContainer: function () {
@@ -1222,7 +1222,7 @@
     return new L.IsoImageCanvasLayer(config)
   };
 
-  const ClipLayer = function(config) {
+  var ClipLayer = function(config) {
     if (!L.ClipCanvasLayer) {
       L.ClipCanvasLayer = L.Canvas.extend({
         _initContainer: function () {
@@ -1324,7 +1324,7 @@
    * @since 2019.08.08
    * @param {*} level 
    */
-  const fmtLevel = function(level) {
+  var fmtLevel = function(level) {
     for (var i = 0, len = level.length; i < len; i++) {
       var color = level[i].color;
       level[i].r = parseInt(color.substr(1, 2), 16);
@@ -3102,21 +3102,21 @@
    * @since 2019.08.08
    */
 
-  const name = 'IsoImage';
-  const picture = 'image/png';
-  const units = 'degrees';
-  const sigma2 = 0.1;
-  const alpha = 100;
-  const O$1 = Object.prototype.toString;
-  const isArray$1 = function(v) { return O$1.call(v) === '[object Array]' };
-  const isIE = 'ActiveXObject' in window;
-  const min$2 = Math.min;
-  const max$2 = Math.max;
-  const abs$2 = Math.abs;
-  const round = Math.round;
-  const flot = 1000000;
+  var name = 'IsoImage';
+  var picture = 'image/png';
+  var units = 'degrees';
+  var sigma2 = 0.1;
+  var alpha = 100;
+  var O$1 = Object.prototype.toString;
+  var isArray$1 = function(v) { return O$1.call(v) === '[object Array]' };
+  var isIE = 'ActiveXObject' in window;
+  var min$2 = Math.min;
+  var max$2 = Math.max;
+  var abs$2 = Math.abs;
+  var round = Math.round;
+  var flot = 1000000;
 
-  const defaultKeyConfig = {
+  var defaultKeyConfig = {
     x: 'x',
     y: 'y',
     v: 'v',
@@ -3124,7 +3124,7 @@
     clipY: '1'
   };
 
-  const existLeaflet = function() {
+  var existLeaflet = function() {
     var l = 'L' in window;
     if (!l) console.log('未加载leaflet');
     return l
