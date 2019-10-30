@@ -4,92 +4,202 @@
   (global = global || self, global.IsoImage = factory());
 }(this, function () { 'use strict';
 
-  if (!Object.assign) {
+  if ( !Object.assign ) {
+
     Object.assign = function(target) {
+
       var source = [];
+
       for (var _i = 1; _i < arguments.length; _i++) {
+
         source[_i - 1] = arguments[_i];
+
       }
+
       var from,
         to = Object(target),
         hasOwnProperty = Object.prototype.hasOwnProperty;
+
       for (var i = 0, l = source.length; i < l; i++) {
+
         from = Object(source[i]);
+
         for (var key in from) {
-          if (hasOwnProperty.call(from, key)) {
+
+          if ( hasOwnProperty.call(from, key) ) {
+
             to[key] = from[key];
+
           }
+
         }
+
       }
+
       return to
+
     };
+
   }
 
   var max = Math.max;
   var min = Math.min;
   var abs = Math.abs;
   var floor = Math.floor;
+
   function ToObject(v) {
-    if (v === null || v === undefined) throw TypeError()
+
+    if ( v === null || v === undefined ) {
+
+      throw TypeError()
+
+    }
+
     return Object(v)
+
   }
+
   function ToLength(v) {
+
     var len = ToInteger(v);
-    if (len <= 0) return 0
-    if (len === Infinity) return 0x20000000000000 - 1 // 2^53-1
+
+    if (len <= 0) {
+
+      return 0
+
+    }
+
+    if (len === Infinity) {
+
+      return 0x20000000000000 - 1 // 2^53-1
+
+    }
+
     return min(len, 0x20000000000000 - 1) // 2^53-1
+
   }
+
   function ToInteger(n) {
+
     n = Number(n);
-    if (isNaN(n)) return 0
-    if (n === 0 || n === Infinity || n === -Infinity) return n
+
+    if ( isNaN(n) ) {
+
+      return 0
+
+    }
+
+    if ( n === 0 || n === Infinity || n === -Infinity ) {
+
+      return n
+
+    }
+    
     return (n < 0 ? -1 : 1) * floor(abs(n))
+
   }
 
   Array.prototype.max = function() {
+
     return Math.max.apply(null, this)
+
   };
+
   Array.prototype.min = function() {
+
     return Math.min.apply(null, this)
+
   };
+
   Array.prototype.mean = function() {
+
     var i, sum;
-    for (i = 0, sum = 0; i < this.length; i++) sum += this[i];
+
+    for (i = 0, sum = 0; i < this.length; i++) {
+
+      sum += this[i];
+
+    }
+
     return sum / this.length
+
   };
+
   Array.prototype.fill = function fill(value) {
+
     var start = arguments[1],
       end = arguments[2];
 
     var o = ToObject(this);
     var lenVal = o.length;
     var len = ToLength(lenVal);
+
     len = max(len, 0);
+
     var relativeStart = ToInteger(start);
     var k;
-    if (relativeStart < 0) k = max(len + relativeStart, 0);
-    else k = min(relativeStart, len);
+
+    if (relativeStart < 0) {
+
+      k = max(len + relativeStart, 0);
+
+    } else {
+
+      k = min(relativeStart, len);
+
+    }
+
     var relativeEnd;
-    if (end === undefined) relativeEnd = len;
-    else relativeEnd = ToInteger(end);
+
+    if (end === undefined) {
+
+      relativeEnd = len;
+
+    } else {
+
+      relativeEnd = ToInteger(end);
+
+    }
+
     var final;
-    if (relativeEnd < 0) final = max(len + relativeEnd, 0);
-    else final = min(relativeEnd, len);
+
+    if (relativeEnd < 0) {
+      
+      final = max(len + relativeEnd, 0);
+
+    } else {
+
+      final = min(relativeEnd, len);
+      
+    }
+
     while (k < final) {
+
       var pk = String(k);
+
       o[pk] = value;
       k += 1;
+
     }
+
     return o
+
   };
+
   Array.prototype.rep = function(n) {
+
     return Array.apply(null, new Array(n)).map(Number.prototype.valueOf, this[0])
+
   };
+
   Array.prototype.pip = function(x, y) {
+
     var i,
       j,
       c = false;
+
     for (i = 0, j = this.length - 1; i < this.length; j = i++) {
+
       if (
         this[i][1] > y != this[j][1] > y &&
         x <
@@ -99,8 +209,11 @@
       ) {
         c = !c;
       }
+
     }
+
     return c
+    
   };
 
   /**
@@ -111,48 +224,83 @@
    * @param {网格点} pointGrid
    * @param {权重系数} pow
    */
+
   function idw(points, pointGrid, pow) {
-    if (pow == void 0) pow = 3;
+
+    if (pow == void 0) {
+
+      pow = 3;
+
+    }
+
     var features = pointGrid.features;
-    if (points.length < 3) return pointGrid
+
+    if (points.length < 3) {
+
+      return pointGrid
+
+    }
+
     var m0 = points.length;
     var m1 = features.length;
-
     var r = [];
 
     for (var i = 0; i < m1; i++) {
+
       for (var j = 0; j < m0; j++) {
+
         var tmpDis = Math.sqrt(
+
           Math.pow(features[i].geometry.coordinates[0] - points[j].x, 2) +
-            Math.pow(features[i].geometry.coordinates[1] - points[j].y, 2)
+          Math.pow(features[i].geometry.coordinates[1] - points[j].y, 2)
+
         );
+
         r.push(tmpDis);
+
       }
+
     }
 
     for (var i = 0; i < m1; i++) {
+
       var ifFind = false;
+
       for (var j = m0 * i; j < m0 * i + m0; j++) {
-        if (Math.abs(r[j]) < 0.0001) {
+
+        if ( Math.abs(r[j]) < 0.0001 ) {
+
           features[i].properties.val = points[j - m0 * i].v;
           ifFind = true;
+
           break
+
         }
+
       }
 
-      if (ifFind) continue
+      if ( ifFind ) {
+
+        continue
+
+      }
 
       var numerator = 0;
       var denominator = 0;
 
       for (var j = m0 * i; j < m0 * i + m0; j++) {
+
         numerator += points[j - m0 * i].v / Math.pow(r[j], pow);
         denominator += 1 / Math.pow(r[j], pow);
+
       }
 
       features[i].properties.val = numerator / denominator;
+
     }
+
     return pointGrid
+    
   }
 
   /**
@@ -512,35 +660,54 @@
    * @param {点} point 
    * @param {面} polygon 
    */
+
   var hitArea = function(point, polygon){   
+
     var x = point[0], y = point[1];
     var inside = false;
+
     for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {  
+
         var xi = polygon[i][0], yi = polygon[i][1];  
         var xj = polygon[j][0], yj = polygon[j][1];
+        var intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
 
-        var intersect = ((yi > y) != (yj > y))  
-                && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
+        if (intersect) {
+
+          inside = !inside;
+          
+        }
+
     }  
+
     return inside
+
   };
 
   var newSpace = function(d) {
+
     return JSON.parse(JSON.stringify(d))
+
   };
 
   var samePoint = function(a, b) {
+
     return a[0] == b[0] && a[1] == b[1]
+
   };
 
   var dist = function (a, b) {
+
     return Math.abs(a - b)
+
   };
 
   var O = Object.prototype.toString;
+
   var isArray = function(v) {
+    
     return O.call(v) === '[object Array]'
+    
   };
 
   /**
@@ -553,8 +720,11 @@
    * @param {查询限制 用于方向查询} limit 
    * @param {查询分支} nArr 
    */
+
   var search = function(catchLine, extent, side, arr, d, limit, nArr) {
+
     nArr = nArr || [];
+
     var tp = arr[arr.length - 1];
     var fp;
     var fd;
@@ -563,51 +733,87 @@
     var k = d == 't' || d == 'b' ? 0 : 1;
     var q = d == 't' || d == 'l' ? 1 : -1;
     var lim = limit ? -1 : 1;
+
     for (var i = 0; side[d][i]; i++) {
+
       var _tpi = side[d][i];
       var dd = (_tpi.p[k] - tp[k]) * q * lim;
-      if (dd > 0) {
-        if (!fp || fp && fd > dd) {
+
+      if ( dd > 0 ) {
+
+        if ( !fp || fp && fd > dd ) {
+
           fp = _tpi;
           fd = dd;
+
         }
+
       }
+
     }
-    if (!fp) {
-      if (limit) {
-        switch (d)
-        {
+
+    if ( !fp ) {
+
+      if ( limit ) {
+
+        switch (d) {
+
           case 't': arr.push(extent['sa']); to = 'l'; break
           case 'r': arr.push(extent['sb']); to = 't'; break
           case 'b': arr.push(extent['sc']); to = 'r'; break
           case 'l': arr.push(extent['sd']); to = 'b'; break
+
         }
+
       } else {
-        switch (d)
-        {
+
+        switch (d) {
+
           case 't': arr.push(extent['sb']); to = 'r'; break
           case 'r': arr.push(extent['sc']); to = 'b'; break
           case 'b': arr.push(extent['sd']); to = 'l'; break
           case 'l': arr.push(extent['sa']); to = 't'; break
+
         }
+
       }
+
     } else {
-      if (samePoint(fp.p, arr[0])) {
+
+      if ( samePoint(fp.p, arr[0]) ) {
+
         arr.push(fp.p);
+
       } else {
+
         coor = newSpace(catchLine[fp.coor].coor);
-        if (fp.d) coor.reverse();
+        fp.d && coor.reverse();
         arr = arr.concat(coor);
+
       }
+
       to = fp.t;
+
     }
-    if (arr.length > 1 && samePoint(arr[0], arr[arr.length - 1])) {
+
+    if ( arr.length > 1 && samePoint(arr[0], arr[arr.length - 1]) ) {
+
       return [arr].concat(nArr)
+
     } else {
-      if (fp && coor) nArr = search(catchLine, extent, side, coor, to, !limit, nArr);
+
+      if (fp && coor) {
+
+        nArr = search(catchLine, extent, side, coor, to, !limit, nArr);
+        
+      }
+
       arr = search(catchLine, extent, side, arr, to, limit, nArr);
+
       return arr
+
     }
+
   };
 
   /**
@@ -618,29 +824,48 @@
    * @param {值} v 
    * @param {是否渐变} gradient 
    */
+
   var getColor = function(arr, v, gradient) {
+
     var color = false;
+
     for (var i = 0, len = arr.length; i < len; i++) {
-      if (v < arr[i].value) {
-        if (!color) {
+
+      if ( v < arr[i].value ) {
+
+        if ( !color ) {
+
           color = JSON.parse(JSON.stringify(arr[i]));
+
           break
+
         }
+
         var scale = (v - color.value) / (arr[i].value - color.value);
         var f = function(k) {
+
           return gradient
             ? parseInt(color[k] + (arr[i][k] - color[k]) * scale)
             : arr[i][k]
+
         };
+
         color.r = f('r');
         color.g = f('g');
         color.b = f('b');
+
         break
+
       } else {
+
         color = JSON.parse(JSON.stringify(arr[i]));
+
       }
+
     }
+
     return color
+    
   };
 
   /**
@@ -653,17 +878,27 @@
   var max$1 = Math.max;
   var min$1 = Math.min;
   var floor$1 = Math.floor;
+
   var calcDir = function (p, ex) {
+
     var t = 0;
     var dir = max$1(dist(ex[0], ex[2]), dist(ex[1], ex[3]));
+
     for (var i = 0; i < 4; i++) {
+
       var iDir = dist(ex[i], p[i % 2]);
-      if (iDir < dir) {
+
+      if ( iDir < dir ) {
+
         dir = iDir;
         t = i;
+
       }
+
     }
+
     return 'lbrt'.charAt(t)
+    
   };
 
   /**
@@ -673,6 +908,7 @@
    * @param {网格数据} pointGrid
    * @param {颜色级别} level
    */
+
   function calcBlock(lines, extent, pointGrid, level) {
 
     var close = [];
@@ -685,82 +921,123 @@
       r: []
     };
     var features = lines.features;
+
     for (var i = 0, il = features.length; i < il; i++) {
+
       var f = features[i];
       var c = f.geometry.coordinates;
+
       for (var n = 0, nl = c.length; n < nl; n++) {
+        
         var l = c[n];
         var first = l[0];
         var last = l[l.length - 1];
+
         // 闭环
-        if (samePoint(first, last)) {
-          close.push({
+        if ( samePoint(first, last) ) {
+
+          close.push( {
+
             coor: l,
             properties: f.properties,
             child: [],
             parent: [],
             i: close.length
-          });
+
+          } );
+
         }
+
         // 开环
         else {
-          catchLine.push({
+
+          catchLine.push( {
+
             coor: l,
             properties: f.properties
-          });
+
+          } );
+
           var fd = calcDir(first, extent);
           var ld = calcDir(last, extent);
-          side[fd].push({
+
+          side[fd].push( {
+
             p: first,
             end: last,
             d: 0,
             t: ld,
             coor: catchLine.length - 1
-          });
-          side[ld].push({
+
+          } );
+
+          side[ld].push( {
+
             p: last,
             end: first,
             d: 1,
             t: fd,
             coor: catchLine.length - 1
-          });
+
+          } );
+
         }
+
       }
+
     }
 
     var searchExtent = {
+
       sa: [extent[0], extent[3]],
       sb: [extent[2], extent[3]],
       sc: [extent[2], extent[1]],
       sd: [extent[0], extent[1]]
+
     };
+
     open = search(catchLine, searchExtent, side, [searchExtent['sa']], 't', false);
 
     for (var i = 0, len = open.length; i < len; i++) {
-      close.push({
+
+      close.push( {
+
         coor: open[i],
         properties: {
+
           type: 'open'
+          
         },
         child: [],
         parent: [],
         i: close.length
-      });
+
+      } );
+
     }
 
     // 父子关系
     for (var i = 0, il = close.length; i < il; i++) {
+
       for (var j = i + 1; j < il; j++) {
+
         var iT = close[i].properties.type;
         var jT = close[j].properties.type;
-        if (iT != 'open' && hitArea(close[i].coor[0], close[j].coor)) {
+
+        if ( iT != 'open' && hitArea(close[i].coor[0], close[j].coor) ) {
+
           close[j].child.push(i);
           close[i].parent.push(j);
-        } else if (jT != 'open' && hitArea(close[j].coor[0], close[i].coor)) {
+
+        } else if ( jT != 'open' && hitArea(close[j].coor[0], close[i].coor) ) {
+
           close[i].child.push(j);
           close[j].parent.push(i);
+
         }
+
       }
+
     }
     
     // 生成区块
@@ -769,37 +1046,71 @@
     var buildIndx = [];
     var PIndex = [];
     var orderTree = function () {
-      if (!remain.length) return
-      var _remain = [];
-      for (var i = 0, il = remain.length; i < il; i++) {
-        var r = remain[i];
 
+      if ( !remain.length ) {
+
+        return false
+
+      }
+
+      var _remain = [];
+
+      for (var i = 0, il = remain.length; i < il; i++) {
+
+        var r = remain[i];
         var child = r.child;
         var iT = 1;
+
         for (var jl = child.length,  j = jl - 1; j > -1; j --) {
-          if (buildIndx.indexOf(child[j]) == -1) iT = 0;
+
+          if (buildIndx.indexOf(child[j]) == -1) {
+
+            iT = 0;
+
+          }
+
         }
-        if (iT) {
+
+        if ( iT ) {
+
           var nC = [];
+
           for (var jl = child.length,  j = jl - 1; j > -1; j --) {
+
             var ind = PIndex.indexOf(child[j]);
-            if (ind > -1) {
+
+            if ( ind > -1 ) {
+
               nC.push(child[j]);
               PIndex.splice(ind, 1);
+
             }
+
           }
+
           PIndex.push(r.i);
           buildIndx.push(r.i);
           remain[i].child = nC;
           buildItem.push(remain[i]);
+
           continue
+
         }
+
         _remain.push(remain[i]);
+
       }
 
-      if (!_remain.length) return
+      if ( !_remain.length ) {
+        
+        return false
+
+      }
+
       remain = _remain;
+
       orderTree();
+
     };
 
     orderTree();
@@ -811,20 +1122,40 @@
     var row = 1;
     var cw = 1;
     var ch = 1;
+
     for (var i = 0; i < pl; i++) {
+
       var tt = pg[i].geometry.coordinates;
-      if (i == 1) ch = abs$1(tt[1] - ft[1]);
-      if (tt[0] != ft[0]) {
+
+      if ( i == 1 ) {
+
+        ch = abs$1(tt[1] - ft[1]);
+
+      }
+
+      if ( tt[0] != ft[0] ) {
+
         row = i;
         cw = abs$1(tt[0] - ft[0]);
+
         break
+
       }
+
     }
+
     for (var i = 0, il = buildItem.length; i < il; i++) {
+
       var c = buildItem[i];
       var coordinates = [c.coor];
       var color = 'rgba(0, 0, 0, 0)';
-      for (var j = 0, jl = c.child.length; j < jl; j++) coordinates.push(close[c.child[j]].coor);
+
+      for (var j = 0, jl = c.child.length; j < jl; j++) {
+
+        coordinates.push(close[c.child[j]].coor);
+
+      }
+
       var ci = floor$1(c.coor.length / 2);
       var cp = c.coor[ci];
       var _col = (cp[0] - ft[0]) / cw;
@@ -834,39 +1165,72 @@
       var _dx = target ? ch : cw;
       var dx = _dx / 100;
       var val;
-      if (pg[gi] && pg[gi + di]) {
+
+      if ( pg[gi] && pg[gi + di] ) {
+
         var np = pg[gi].geometry.coordinates;
         var nep = pg[gi + di].geometry.coordinates;
         var _cp = Object.assign([], cp, []);
+
         _cp[target] = max$1(cp[target] - dx, np[target]);
+
         var va = pg[gi].properties.val;
         var vb = pg[gi + di].properties.val;
-        if (!hitArea(_cp, c.coor)) _cp[target] = min$1(cp[target] + dx * 2, nep[target]);
-        if (hitArea(_cp, c.coor)) val = va + (vb - va) * (abs$1(_cp[target] - pg[gi].geometry.coordinates[target]) / _dx);
-      } else if (pg[gi]) {
+
+        if ( !hitArea(_cp, c.coor) ) {
+
+          _cp[target] = min$1(cp[target] + dx * 2, nep[target]);
+
+        }
+
+        if ( hitArea(_cp, c.coor) ) {
+
+          val = va + (vb - va) * (abs$1(_cp[target] - pg[gi].geometry.coordinates[target]) / _dx);
+
+        }
+
+      } else if ( pg[gi] ) {
+
         val = pg[gi].properties.val;
+
       }
-      if (val != void 0) {
+
+      if ( val != void 0 ) {
+
         var _color = getColor(level, val, false);
+
         color = 'rgb(' + _color.r + ',' + _color.g + ',' + _color.b + ')';
         val = _color.value;
+
       }
-      buildFeatures.push({
+
+      buildFeatures.push( {
+
         geometry: {
+
           coordinates: coordinates,
           type: 'MultiLineString'
+
         },
         properties: {
+
           val: val,
           color: color
+
         },
         type: 'Feature'
-      });
+
+      } );
+
     }
+
     return {
+
       features: buildFeatures,
       type: "FeatureCollection"
+
     }
+    
   }
 
   /**
@@ -876,29 +1240,48 @@
    * @param {等级数组} level
    * @param {} config
    */
+
   var defaultConfig = {
+
     direction: 'vertical', // vertical horizontal
     backgroundColor: '#fff',
     color: '#333',
     gradient: true
+
   };
+
   function getLegend(level, config) {
-    if (level.legend < 2) return false
+
+    if ( level.legend < 2 ) {
+
+      return false
+
+    }
+
     config = Object.assign({}, defaultConfig, config);
+
     var gradient = config.gradient ? 1 : 0;
     var dir = config.direction == 'horizontal' ? 0 : 1;
     var title = config.title || '';
     var shape = config.shape || 'rect';
     var legend = document.createElement('canvas');
     var w = dir ? 120 : 340;
-    if (!gradient) w += 20;
+
+    if ( !gradient ) {
+
+      w += 20;
+
+    }
+
     var h = dir ? 240 : 50;
+
     legend.width = w;
     legend.height = h;
+
     var gR = dir ? [15, 30, 20, 200] : [70, 5, 200, 20];
     var lG = dir ? [gR[0], gR[1] + gR[3], gR[0], gR[1]] : [gR[0], gR[1], gR[0] + gR[2], gR[1]];
-
     var ctx = legend.getContext('2d');
+
     ctx.lineWidth = 1;
     ctx.strokeStyle = '#999';
     ctx.fillStyle = config.backgroundColor;
@@ -907,35 +1290,55 @@
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'start';
     ctx.fillStyle = config.color;
+
     var grad = ctx.createLinearGradient(lG[0], lG[1], lG[2], lG[3]);
+
     for (var i = 0, len = level.length; i < len; i++) {
+
       var color = level[i].color;
       var unit = level[i].unit || '';
       var text = level[i].value + unit;
-      
       var ps = (1 / (len - 1)) * i; 
-      if (!gradient && i > 0 && i < len - 1) {
+
+      if ( !gradient && i > 0 && i < len - 1 ) {
+
         var _color = level[i - 1].color;
+
         grad.addColorStop(ps, _color);
         grad.addColorStop(ps, color);
+
       } else {
+
         grad.addColorStop(ps, color);
+
       }
 
-      if (dir) {
+      if ( dir ) {
+
         ctx.fillText(text, gR[0] + gR[2] + 5, gR[1] + gR[3] * (1 - ps));
-      } else if (!i || i == len - 1) {
+
+      } else if ( !i || i == len - 1 ) {
+
         var tw = ctx.measureText(text).width;
         var y = gR[1] + gR[3] / 2;
         var x = i ? gR[0] + gR[2] + 5 : gR[0] - 5 - tw;
+
         ctx.fillText(text, x, y);
+
       }
+
     }
+    
     ctx.fillStyle = grad;
+
     switch (shape) {
+
       case 'triangle-rect':
-        if (dir) {
+
+        if ( dir ) {
+
           var td = gR[2] / 2;
+
           ctx.beginPath();
           ctx.moveTo(gR[0] + td, gR[1]);
           ctx.lineTo(gR[0] + gR[2], gR[1] + td);
@@ -946,8 +1349,11 @@
           ctx.lineTo(gR[0] + td, gR[1]);
           ctx.stroke();
           ctx.fill();
+
         } else {
+
           var td = gR[3] / 2;
+
           ctx.beginPath();
           ctx.moveTo(gR[0], gR[1] + td);
           ctx.lineTo(gR[0] + td, gR[1]);
@@ -958,25 +1364,41 @@
           ctx.lineTo(gR[0], gR[1] + td);
           ctx.stroke();
           ctx.fill();
+
         }
+
         break
+
       default: 
+
         ctx.fillRect(gR[0], gR[1], gR[2], gR[3]);
+
         break
+
     }
-    if (title.length) {
+
+    if ( title.length ) {
+
       ctx.font = '14px 微软雅黑';
       ctx.fillStyle = config.color;
       ctx.textBaseline = 'top';
-      if (dir) {
+
+      if ( dir ) {
+
         ctx.textAlign = 'start';
         ctx.fillText(title, 5, 5);
+
       } else {
+
         ctx.textAlign = 'center';
         ctx.fillText(title, w / 2, gR[1] + gR[3] + 5);
+
       }
+
     }
+
     return legend
+    
   }
 
   /**
@@ -988,8 +1410,11 @@
    * @param {} isosurface
    * @param {图片配置 width: 图片宽度 opacity: 透明度 gradient 是否渐变, filter 过滤筛选 } config
    */
+
   function getIsosurface(opt, pointGrid, isosurface, config) {
+
     config = config || {};
+
     var gradient = config.gradient == void 0 ? true : config.gradient;
     var size = opt.size;
     var cellWidth = opt.cellWidth;
@@ -999,46 +1424,81 @@
     var width = config.width || 1000;
     var height = Math.abs((width / size[0]) * size[1]);
     var canvas = document.createElement('canvas');
+
     canvas.width = width;
     canvas.height = height;
+
     var ctx = canvas.getContext('2d');
+
     ctx.clearRect(0, 0, width, height);
-    if (gradient) {
+
+    if ( gradient ) {
+
       var p = pointGrid.features;
       var w = Math.abs((cellWidth / size[0]) * width);
       var h = Math.abs((cellWidth / size[1]) * height);
+
       for (var i = 0, len = p.length; i < len; i++) {
+
         var item = p[i].geometry.coordinates;
         var x = ((item[0] - ex[0][0]) / size[0]) * width - w / 2;
         var y = ((item[1] - ex[0][1]) / size[1]) * height - h / 2;
         var color = getColor(level, p[i].properties.val, gradient);
         var val = color.value;
-        if (filter && filter.indexOf && filter.indexOf(val) == -1) continue
+
+        if (filter && filter.indexOf && filter.indexOf(val) == -1) {
+
+          continue
+
+        }
+        
         ctx.strokeStyle = ctx.fillStyle =
           'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
         ctx.beginPath();
         ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
+
       }
+
     } else {
+
       var d = isosurface.features;
+
       for (var i = 0, len = d.length; i < len; i++) {
+
         var val = d[i].properties.val;
-        if (filter && filter.indexOf && filter.indexOf(val) == -1) continue
+
+        if (filter && filter.indexOf && filter.indexOf(val) == -1) {
+
+          continue
+
+        }
+
         var c = d[i].geometry.coordinates;
+
         ctx.strokeStyle = ctx.fillStyle = d[i].properties.color;
         ctx.beginPath();
+
         for (var j = 0, jLen = c.length; j < jLen; j++) {
+
           for (var n = 0, cLen = c[j].length; n < cLen; n++) {
+
             var x = ((c[j][n][0] - ex[0][0]) / size[0]) * width;
             var y = ((c[j][n][1] - ex[0][1]) / size[1]) * height;
+
             ctx[n ? 'lineTo' : 'moveTo'](x, y);
+
           }
+
         }
+
         ctx.fill('evenodd');
+
       }
+
     }
     
     return canvas
+    
   }
 
   /**
@@ -1049,8 +1509,11 @@
    * @param {线数据} lines
    * @param {图片配置 width: 图片宽度, filter 过滤筛选} config
    */
+
   function getIsoline(opt, lines, config) {
+
     config = config || {};
+
     var size = opt.size;
     var ex = opt.ex;
     var width = config.width || 1000;
@@ -1058,9 +1521,12 @@
     var color = config.isolineColor || '#333';
     var filter = config.filter;
     var canvas = document.createElement('canvas');
+
     canvas.width = width;
     canvas.height = height;
+
     var ctx = canvas.getContext('2d');
+
     ctx.clearRect(0, 0, width, height);
     ctx.lineWidth = 1;
     ctx.font = '12px 微软雅黑';
@@ -1069,32 +1535,58 @@
 
     var d = lines.features;
     var position = {};
+
     for (var i = 0, len = d.length; i < len; i++) {
+
       var val = d[i].properties.val;
-      if (filter && filter.indexOf && filter.indexOf(val) == -1) continue
+
+      if (filter && filter.indexOf && filter.indexOf(val) == -1) {
+
+        continue
+
+      }
+
       var c = d[i].geometry.coordinates;
       var _color = color == 'level' ? d[i].properties.color : color;
+
       ctx.strokeStyle = ctx.fillStyle = _color;
+
       for (var j = 0, jLen = c.length; j < jLen; j++) {
+
         ctx.beginPath();
+
         var ft = 0;
+
         for (var n = 0, cLen = c[j].length; n < cLen; n++) {
+
           var x = ((c[j][n][0] - ex[0][0]) / size[0]) * width;
           var y = ((c[j][n][1] - ex[0][1]) / size[1]) * height;
+
           ctx[n ? 'lineTo' : 'moveTo'](x, y);
+
           var dx = Math.round(x / 16);
           var dy = Math.round(y / 16);
           var k = dx + '-' + dy;
-          if (!position[k] && !ft) {
+
+          if ( !position[k] && !ft ) {
+
             position[k] = 1;
             ft = 1;
+
             ctx.fillText(val, x, y);
+
           }
+
         }
+
         ctx.stroke();
+
       }
+
     }
+
     return canvas
+    
   }
 
   /**
@@ -1104,73 +1596,141 @@
    * @param {canvas数组} cavs
    * @param {opacity: 透明度} config
    */
+
   function mix(cavs, option, config) {
-    if (!cavs[0]) return false
+
+    if (!cavs[0]) {
+
+      return false
+
+    }
+
     config = config || {};
+
     var opacity = config.opacity || 1;
     var width = cavs[0].width;
     var height = cavs[0].height;
     var canvas = document.createElement('canvas');
+
     canvas.width = width;
     canvas.height = height;
+
     var ctx = canvas.getContext('2d');
+
     ctx.clearRect(0, 0, width, height);
     ctx.globalAlpha = opacity;
     ctx.strokeStyle = config.clipColor || '#333';
     ctx.lineWidth = config.clipWidth || 1;
+
     var clip = option.clip;
-    if (clip && isArray(clip)) {
+
+    if ( clip && isArray(clip) ) {
+      
       var ex = option.ex;
       var size = option.size;
       var key = option.key || {};
       var x = key.clipX || 0;
       var y = key.clipY || 1;
+
       ctx.beginPath();
+
       var drawClip = function(d) {
-        if (isArray(d[0]) && isArray(d[0][0])) {
+
+        if ( isArray(d[0]) && isArray(d[0][0]) ) {
+
           for (var i = 0, len = d.length; i < len; i++) {
+
             drawClip(d[i]);
+
           }
-          return
+
+          return false
+
         }
-        if (isArray(d)) {
+
+        if ( isArray(d) ) {
+
           for (var i = 0, len = d.length; i < len; i++) {
+
             var dx = ((d[i][x] - ex[0][0]) / size[0]) * width;
             var dy = ((d[i][y] - ex[0][1]) / size[1]) * height;
+
             ctx[i ? 'lineTo' : 'moveTo'](dx, dy);
+
           }
+
         }
+
       };
+
       drawClip(clip);
+
       config.clip && ctx.stroke();
+
       ctx.clip();
+
     }
+
     for (var i = 0; cavs[i]; i++) {
+
       var pattern = ctx.createPattern(cavs[i], 'no-repeat');
+
       ctx.fillStyle = pattern;
       ctx.fillRect(0, 0, width, height);
+
     }
+    
     return canvas
+    
   }
 
   var fmtLatLng = function(latlngs, deep, x, y) {
-    if (y === void 0) y = 1;
-    if (x === void 0) x = 0;
-    if (!deep) return [latlngs[y], latlngs[x]]
-    deep--;
-    for (var i = 0, len = latlngs.length; i < len; i++) {
-      latlngs[i] = fmtLatLng(latlngs[i], deep);
+
+    if ( y === void 0 ) {
+      
+      y = 1;
+
     }
+
+    if ( x === void 0 ) {
+
+      x = 0;
+
+    }
+
+    if ( !deep ) {
+
+      return [latlngs[y], latlngs[x]]
+
+
+    } 
+
+    deep--;
+
+    for (var i = 0, len = latlngs.length; i < len; i++) {
+
+      latlngs[i] = fmtLatLng(latlngs[i], deep);
+
+    }
+
     return latlngs
+
   };
 
   var fmtGeoJson = function(data) {
+
     var d = newSpace(data);
+
     for (var i = 0, len = d.features.length; i < len; i++) {
+
       var coor = d.features[i].geometry.coordinates;
+      
       d.features[i].geometry.coordinates = fmtLatLng(coor, 2);
+
     }
+
     return d
+
   };
 
   /**
@@ -1180,35 +1740,54 @@
    * @param {*} config 
    */
   var IsoLayer = function(config) {
-    if (!L.IsoImageCanvasLayer) {
+
+    if ( !L.IsoImageCanvasLayer ) {
+
       L.IsoImageCanvasLayer = L.Canvas.extend({
+
         _initContainer: function () {
+
           var container = this._container = document.createElement('canvas');
+
           this._container.style.opacity = 0;
+
           L.DomEvent.on(container, 'mousemove', L.Util.throttle(this._onMouseMove, 32, this), this);
           L.DomEvent.on(container, 'click dblclick mousedown mouseup contextmenu', this._onClick, this);
           L.DomEvent.on(container, 'mouseout', this._handleMouseOut, this);
 
           this._ctx = container.getContext('2d');
+
         },
+
         _draw: function () {
+
           var layer, bounds = this._redrawBounds;
           var _ctx = this._ctx;
+
           _ctx.save();
-          if (bounds) {
+
+          if ( bounds ) {
+
             var size = bounds.getSize();
+
             _ctx.beginPath();
             _ctx.rect(bounds.min.x, bounds.min.y, size.x, size.y);
             _ctx.clip();
+
           }
       
           this._drawing = true;
       
           for (var order = this._drawFirst; order; order = order.next) {
+
             layer = order.layer;
-            if (!bounds || (layer._pxBounds && layer._pxBounds.intersects(bounds))) {
+
+            if ( !bounds || (layer._pxBounds && layer._pxBounds.intersects(bounds)) ) {
+
               layer._updatePath();
+
             }
+
           }
       
           this._drawing = false;
@@ -1216,16 +1795,25 @@
           _ctx.restore();
           
           this.options.clipLayer && this.options.clipLayer._clip(_ctx);
+
         }
+
       });
+
     }
+
     return new L.IsoImageCanvasLayer(config)
+
   };
 
   var ClipLayer = function(config) {
-    if (!L.ClipCanvasLayer) {
+
+    if ( !L.ClipCanvasLayer ) {
+
       L.ClipCanvasLayer = L.Canvas.extend({
+
         _initContainer: function () {
+
           var container = this._container = document.createElement('canvas');
       
           L.DomEvent.on(container, 'mousemove', L.Util.throttle(this._onMouseMove, 32, this), this);
@@ -1233,8 +1821,10 @@
           L.DomEvent.on(container, 'mouseout', this._handleMouseOut, this);
       
           this._ctx = container.getContext('2d');
+
         },
         _clip: function (ctx) {
+
           var _ctx = this._ctx;
           _ctx.fillStyle = _ctx.createPattern(ctx.canvas, 'no-repeat');
 
@@ -1244,24 +1834,37 @@
           // _ctx.fillRect(this._bounds.min.x, this._bounds.min.y, size.x, size.y)
 
           _ctx.beginPath();
+
           for (var order = this._drawFirst; order; order = order.next) {
+
             var layer = order.layer;
             var parts = layer._parts;
+
             for (var i = 0, len = parts.length; i < len; i++) {
+
               for (var j = 0, jLen = parts[i].length; j < jLen; j++) {
+
                 _ctx[j ? 'lineTo' : 'moveTo'](parts[i][j].x, parts[i][j].y);
+
               }
+
             }
+
           }
           
           _ctx.save();
           _ctx.translate(this._bounds.min.x, this._bounds.min.y);
           _ctx.fill();
           _ctx.restore();
+
         }
+        
       });
+
     }
+
     return new L.ClipCanvasLayer(config)
+    
   };
 
   /**
@@ -1271,23 +1874,39 @@
    * @param {*} config 
    */
   function leafletLegend(config) {
-    if (!L.Control.IsoLegendCortrol) {
+
+    if ( !L.Control.IsoLegendCortrol ) {
+
       L.Control.IsoLegendCortrol = L.Control.extend({
+
         options: {
+
           position: 'bottomleft',
           canvas: ''
+
         },
+
         initialize: function(options) {
+
           L.Util.extend(this.options, options);
+
         },
+        
         onAdd: function() {
+
           this._container = L.DomUtil.create('div', 'leaflet-control-iso-legend');
           this._container.appendChild(this.options.canvas);
+
           return this._container
+
         }
+
       });
+
     }
+
     return new L.Control.IsoLegendCortrol(config)
+
   }
 
   /**
@@ -1295,15 +1914,31 @@
    * @author kongkongbuding
    * @since 2019.08.08 
    */
+
   function leafletImage(d, type, layer, config) {
-    if (!d || !layer) return
+
+    if (!d || !layer) {
+
+      return false
+
+    }
+
     var group = [];
     var filter = config.filter;
+
     for (var i = 0; d.features[i]; i++) {
+
       var v = d.features[i];
       var val = v.properties.val;
-      if (filter && filter.indexOf && filter.indexOf(val) == -1 || !v.geometry.coordinates.length) continue
+
+      if (filter && filter.indexOf && filter.indexOf(val) == -1 || !v.geometry.coordinates.length) {
+
+        continue
+
+      }
+
       var style = Object.assign({}, {
+
         stroke: true,
         weight: 1,
         opacity: 0.7,
@@ -1311,11 +1946,17 @@
         color: v.properties.color,
         fillColor: v.properties.color,
         renderer: layer
+        
       }, config);
+
       var marker = L[type](v.geometry.coordinates, style);
+
       group.push(marker);
+
     }
+
     return group
+
   }
 
   /**
@@ -1324,14 +1965,21 @@
    * @since 2019.08.08
    * @param {*} level 
    */
+
   var fmtLevel = function(level) {
+
     for (var i = 0, len = level.length; i < len; i++) {
+
       var color = level[i].color;
+
       level[i].r = parseInt(color.substr(1, 2), 16);
       level[i].g = parseInt(color.substr(3, 2), 16);
       level[i].b = parseInt(color.substr(5, 2), 16);
+
     }
+
     return level
+    
   };
 
   /**
@@ -1341,42 +1989,77 @@
    * @param {配置项} opt 
    * @param {回调} callBack 
    */
+
   function merge(isoimages, opt, callBack) {
+    
     var imgs = isArray(isoimages) ? isoimages : [];
+
     var option = Object.assign({}, {
+
       width: 800,
       height: 600,
       child: []
+
     }, opt);
-    if (!callBack || !imgs.length || !option.child.length) return false
+
+    if (!callBack || !imgs.length || !option.child.length) {
+
+      return false
+
+    }
+
     var c = option.child;
     var initInd = 0;
     var w = option.width;
     var h = option.height;
     var canvas = document.createElement('canvas');
+
     canvas.width = w;
     canvas.height = h;
+
     var ctx = canvas.getContext('2d');
+
     ctx.clearRect(0, 0, w, h);
+
     for (var i = 0, len = c.length; i < len; i++) {
+
       var t = c[i];
       var v = imgs[t.target];
-      if (!v) continue
+
+      if (!v) {
+
+        continue
+
+      }
+
       initInd++;
+
       v[t.type] && v.initReady(function(that, t) {
+
         var img = that[t.type](t.config, 1);
         var s = t.scale || 1;
+        
         initInd--;
+        
         var pattern = ctx.createPattern(img, 'no-repeat');
+
         ctx.fillStyle = pattern;
         ctx.save();
         ctx.translate(t.x, t.y);
         ctx.scale(s, s);
         ctx.fillRect(0, 0, img.width, img.height);
         ctx.restore();
-        if (!initInd) return callBack(canvas)
+        
+        if ( !initInd ) {
+
+          return callBack(canvas)
+          
+        }
+
       }, t);
+
     }
+    
   }
 
   /**
@@ -3107,15 +3790,12 @@
   var units = 'degrees';
   var sigma2 = 0.1;
   var alpha = 100;
-  var O$1 = Object.prototype.toString;
-  var isArray$1 = function(v) { return O$1.call(v) === '[object Array]' };
   var isIE = 'ActiveXObject' in window;
   var min$2 = Math.min;
   var max$2 = Math.max;
   var abs$2 = Math.abs;
   var round = Math.round;
   var flot = 1000000;
-
   var defaultKeyConfig = {
     x: 'x',
     y: 'y',
@@ -3125,37 +3805,85 @@
   };
 
   var existLeaflet = function() {
+
     var l = 'L' in window;
-    if (!l) console.log('未加载leaflet');
+
+    if (!l) {
+      
+      console.log('未加载leaflet');
+
+    }
+
     return l
+
   };
+
   function IsoImage(points, opt, callBack) {
+
     this.name = name;
 
     this.initialize(points, opt, callBack);
 
     this.getIsosurface = function(config, key) {
-      if (!this.alow()) return false
+
+      if ( !this.alow() ) {
+
+        return false
+
+      }
+
       var cav = mix(
-        [getIsosurface(this.option, this.pointGrid, this.isosurface, config)],
+        [
+          getIsosurface(this.option, this.pointGrid, this.isosurface, config)
+        ],
         this.option,
         config
       );
-      if (key) return cav
+
+      if ( key ) {
+        
+        return cav
+
+      } 
+
       return cav.toDataURL(picture)
+
     };
+    
     this.getIsoline = function(config, key) {
-      if (!this.alow()) return false
+
+      if ( !this.alow() ) {
+
+        return false
+
+      }
+
       var cav = mix(
-        [getIsoline(this.option, this.isoline, config)],
+        [
+          getIsoline(this.option, this.isoline, config)
+        ],
         this.option,
         config
       );
-      if (key) return cav
+
+      if ( key ) {
+
+        return cav
+
+      }
+
       return cav.toDataURL(picture)
+
     };
+
     this.getIsoImage = function(config, key) {
-      if (!this.alow()) return false
+      
+      if ( !this.alow() ) {
+
+        return false
+
+      }
+
       var cav = mix(
         [
           getIsosurface(this.option, this.pointGrid, this.isosurface, config),
@@ -3164,22 +3892,51 @@
         this.option,
         config
       );
-      if (key) return cav
+
+      if ( key ) {
+
+        return cav
+
+      }
+
       return cav.toDataURL(picture)
+
     };
     this.getLegend = function(config, key) {
+      
       var level = this.option.level || [];
       var legend = getLegend(level, config);
-      if (!legend) return false
-      if (key) return legend
+
+      if ( !legend ) {
+
+        return false
+
+      }
+
+      if ( key ) {
+
+        return legend
+
+      }
+      
       return legend.toDataURL('image/png')
+
     };
     this.layer = function(map, config) {
-      if (!existLeaflet()) return
+
+      if ( !existLeaflet() ) {
+
+        return false
+
+      } 
+      
       config = Object.assign({}, {
+
         padding: 0.5,
         opacity: 0.1
+
       }, config);
+
       var clipLayer = ClipLayer(config);
       var style = {
         stroke: true,
@@ -3190,56 +3947,112 @@
         fillColor: '#ff0000',
         renderer: clipLayer
       };
+
       L['polygon'](this.option.fmtClip, style).addTo(map);
+
       config.clipLayer = clipLayer;
+
       var isoLayer = IsoLayer(config);
+
       return isoLayer
+
     };
+
     this.getLeafletIsosurface = function(layer, config) {
-      if (!existLeaflet()) return
+
+      if ( !existLeaflet() ) return
+
       var d = this.fmtLatlngsIsosurface;
       var group = leafletImage(d, 'polygon', layer, config);
       return L.featureGroup(group)
     };
     this.getLeafletIsoline = function(layer, config) {
-      if (!existLeaflet()) return
+      if ( !existLeaflet() ) {
+
+        return false
+
+      }
+
       var d = this.fmtLatlngsIsoline;
       var group = leafletImage(d, 'polyline', layer, config);
+
       return L.featureGroup(group)
+
     };
     this.getLeafletIsoImage = function(layer, config) {
-      if (!existLeaflet()) return
+
+      if ( !existLeaflet() ) {
+
+        return false
+
+      }
+
       var isosurface = this.fmtLatlngsIsosurface;
       var isoline = this.fmtLatlngsIsoline;
       var isosurfaceGroup = leafletImage(isosurface, 'polygon', layer, config);
       var isolineGroup = leafletImage(isoline, 'polyline', layer, config);
       var group = isosurfaceGroup.concat(isolineGroup);
+
       return L.featureGroup(group)
+
     };
+
     this.getLeafletLegend = function(config) {
-      if (!existLeaflet()) return
+
+      if ( !existLeaflet() ) {
+
+        return false
+
+      }
+
       config = Object.assign({}, {
+
         position: 'bottomleft',
         gradient: true
+
       }, config);
+
       var level = this.option.level || [];
       var legend = getLegend(level, config);
-      if (!legend) return false
+
+      if ( !legend ) {
+
+        return false
+
+      }
+
       config.canvas = legend;
+      
       return leafletLegend(config)
+
     };
+
   }
 
   IsoImage.prototype = {
     constructor: IsoImage,
     initialize: function(points, opt, callBack) {
+
       // this.turfIsolines = opt.turfIsolines || window['turfIsolines']
       // this.turfPointGrid = opt.turfPointGrid || window['turfPointGrid']
+
       var ex = opt.extent;
       var level = opt.level;
-      if (!ex) return console.log('缺少参数extent(画布左上右下坐标)')
-      if (!level) return console.log('缺少参数level(色阶)')
+
+      if ( !ex ) {
+
+        return console.log('缺少参数extent(画布左上右下坐标)')
+
+      } 
+
+      if ( !level ) {
+
+        return console.log('缺少参数level(色阶)')
+
+      }
+
       level = fmtLevel(level);
+      
       var extent = [
         min$2(ex[0][0], ex[1][0]),
         min$2(ex[0][1], ex[1][1]),
@@ -3248,9 +4061,17 @@
       ];
       var size = [ex[1][0] - ex[0][0], ex[1][1] - ex[0][1]];
       var cellWidth = opt.cellWidth || round((abs$2(size[0]) / 200) * flot) / flot;
-      if (isIE) cellWidth *= 3;
+
+      if ( isIE ) {
+
+        cellWidth *= 3;
+
+      }
+
       var key = Object.assign({}, defaultKeyConfig, opt.keyConfig);
+
       this.option = {
+
         worker: opt.worker,
         type: opt.type || 'idw',
         pow: opt.pow || 3,
@@ -3264,47 +4085,72 @@
         cellWidth: cellWidth,
         level: level,
         key: key
+
       };
-      var p = [],
-        v = [],
-        x = [],
-        y = [];
-      if (isArray$1(points)) {
+
+      var p = [];
+      var v = [];
+      var y = [];
+      
+      if ( isArray(points) ) {
+
         for (var i = 0, len = points.length; i < len; i++) {
-          if (points[i][key.v] == void 0) continue
+
+          if ( points[i][key.v] == void 0 ) {
+
+            continue
+
+          }
+
           var _v = points[i][key.v];
           var _x = points[i][key.x];
           var _y = points[i][key.y];
+
           p.push({
             x: _x,
             y: _y,
             v: _v
           });
           v.push(_v);
-          x.push(_x);
           y.push(_y);
+
         }
+
       }
+
       this.points = p;
       this._v = v;
-      this._x = x;
       this._y = y;
+
       var that = this;
-      if (opt.worker && window.Worker && !isIE) {
+
+      if ( opt.worker && window.Worker && !isIE ) {
+
         var pointGridWorker = new Worker(opt.worker + '/turf.js');
+
         pointGridWorker.onmessage = function(e) {
+
           that.pointGrid = e.data;
           that.calcGridValue();
+
           callBack && that.initReady(callBack);
+
         };
+
         pointGridWorker.postMessage(['pointGrid', extent, cellWidth, { units: units }]);
-        return
+
+        return false
+
       }
+
       this.pointGrid = pointGrid(extent, cellWidth, { units: units });
       this.calcGridValue();
+
       callBack && this.initReady(callBack);
+
     },
     calcGridValue: function() {
+
       var opt = this.option;
       var pointGrid = this.pointGrid;
       var a = this._v;
@@ -3313,83 +4159,145 @@
       var d = opt.model;
       var e = sigma2;
       var f = alpha;
+
       switch (opt.type) {
+
         case 'kriging':
-          if (opt.worker && window.Worker && !isIE) {
+
+          if ( opt.worker && window.Worker && !isIE ) {
+
             var krigingWorker = new Worker(opt.worker + '/' + opt.type + '.js');
             var that = this;
+
             krigingWorker.onmessage = function(e) {
+
               that.pointGrid = e.data;
+
+              this._x = x;
+
               that.pointGridState = true;
               that.calcIso();
+
             };
+
             krigingWorker.postMessage([pointGrid, a, b, c, d, e, f]);
-            return
+
+            return false
+
           }
+
           var variogram = kriging.train(a, b, c, d, e, f );
+
           for (var i = 0; i < pointGrid.features.length; i++) {
+
             var krigingVal = kriging.predict(
+
               pointGrid.features[i].geometry.coordinates[0],
               pointGrid.features[i].geometry.coordinates[1],
               variogram
+
             );
+
             pointGrid.features[i].properties.val = krigingVal;
+
           }
+
           this.pointGridState = true;
           this.calcIso();
+
           break
+
         default:
+
           var points = this.points;
-          if (opt.worker && window.Worker && !isIE) {
+
+          if ( opt.worker && window.Worker && !isIE ) {
+
             var defaultWorker = new Worker(opt.worker + '/' + opt.type + '.js');
             var that = this;
+
             defaultWorker.onmessage = function(e) {
+
               that.pointGrid = e.data;
               that.pointGridState = true;
               that.calcIso();
+
             };
+
             defaultWorker.postMessage([points, pointGrid, opt.pow]);
-            return
+
+            return false
+
           }
+
           this.pointGrid = idw(points, pointGrid, opt.pow);
           this.pointGridState = true;
+
           this.calcIso();
+
           break
+
       }
+
     },
     calcIso: function() {
+
       var opt = this.option;
       var pointGrid = this.pointGrid;
       var level = opt.level;
       var breaks = [];
       var that = this;
-      for (var i = 0, len = level.length; i < len; i++)
+
+      for (var i = 0, len = level.length; i < len; i++) {
+
         breaks.push(level[i].value);
-      if (opt.worker && window.Worker && !isIE) {
+
+      }
+
+      if ( opt.worker && window.Worker && !isIE ) {
+
         var turfIsolinesWorker = new Worker(opt.worker + '/turf.js');
         var that = this;
+
         turfIsolinesWorker.onmessage = function(e) {
+
           var lines = e.data;
+
           that.isoline = lines;
           that.isosurface = calcBlock(lines, opt.extent, pointGrid, level);
           that.fmtLatlngsIsoline = fmtGeoJson(that.isoline);
           that.fmtLatlngsIsosurface = fmtGeoJson(that.isosurface);
           that.isoLinesState = true;
+
         };
+
         turfIsolinesWorker.postMessage(['isolines', pointGrid, breaks, { zProperty: 'val' }, level]);
-        return
+
+        return false
+
       }
+      
       var lines = isolines(pointGrid, breaks, { zProperty: 'val' });
       var d = lines.features;
+
       for (var i = 0, len = d.length; i < len; i++) {
+
         var val = d[i].properties.val;
+
         for (var q = 0; level[q]; q++) {
-          if (level[q].value == val) {
+          
+          if ( level[q].value == val ) {
+
             d[i].properties.color = level[q].color;
+
             break
+
           }
+
         }
+
       }
+
       // 等值线平滑处理 会对 calcBlock 计算产生影响
       // if (opt.smooth) {
       //   var _lFeatures = lines.features
@@ -3405,30 +4313,47 @@
       //     _lFeatures[i].geometry.coordinates = _lCoords
       //   }
       // }
+
       this.isoline = lines;
       this.isosurface = calcBlock(lines, opt.extent, pointGrid, level);
       this.fmtLatlngsIsoline = fmtGeoJson(this.isoline);
       this.fmtLatlngsIsosurface = fmtGeoJson(this.isosurface);
       this.isoLinesState = true;
+
     },
     alow: function() {
+
       return this.pointGrid && this.isoline
+
     },
     initReady: function(callBack, config) {
+
       var timer = null;
       var that = this;
+
       timer = setInterval(function() {
-        if (that.pointGridState && that.isoLinesState) {
+
+        if ( that.pointGridState && that.isoLinesState ) {
+
           clearInterval(timer);
+
           callBack && callBack(that, config);
+
         }
+
       }, 10);
+
     },
     remove: function() {
+
       for (var p in this) {
+
         delete this[p];
+
       }
+
       return this
+      
     }
   };
 

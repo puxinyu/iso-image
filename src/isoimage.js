@@ -3,6 +3,7 @@
  * @author kongkongbuding
  * @since 2019.08.08
  */
+
 import idw from './calc/idw'
 import kriging from './calc/kriging'
 import calcBlock from './calc/calcBlock'
@@ -12,6 +13,7 @@ import getIsoline from './layer/isoline'
 import mix from './layer/mix'
 import fmtGeoJson, { fmtLatLng } from './util/fmtGeoJson'
 import { IsoLayer, ClipLayer } from './util/leafletLayer'
+import { isArray } from './util/common'
 import leafletLegend from './util/leafletLegend'
 import leafletImage from './util/leafletImage'
 import fmtLevel from './util/fmtLevel'
@@ -24,15 +26,12 @@ var picture = 'image/png'
 var units = 'degrees'
 var sigma2 = 0.1
 var alpha = 100
-var O = Object.prototype.toString
-var isArray = function(v) { return O.call(v) === '[object Array]' }
 var isIE = 'ActiveXObject' in window
 var min = Math.min
 var max = Math.max
 var abs = Math.abs
 var round = Math.round
 var flot = 1000000
-
 var defaultKeyConfig = {
   x: 'x',
   y: 'y',
@@ -42,37 +41,85 @@ var defaultKeyConfig = {
 }
 
 var existLeaflet = function() {
+
   var l = 'L' in window
-  if (!l) console.log('未加载leaflet')
+
+  if (!l) {
+    
+    console.log('未加载leaflet')
+
+  }
+
   return l
+
 }
+
 export default function IsoImage(points, opt, callBack) {
+
   this.name = name
 
   this.initialize(points, opt, callBack)
 
   this.getIsosurface = function(config, key) {
-    if (!this.alow()) return false
+
+    if ( !this.alow() ) {
+
+      return false
+
+    }
+
     var cav = mix(
-      [getIsosurface(this.option, this.pointGrid, this.isosurface, config)],
+      [
+        getIsosurface(this.option, this.pointGrid, this.isosurface, config)
+      ],
       this.option,
       config
     )
-    if (key) return cav
+
+    if ( key ) {
+      
+      return cav
+
+    } 
+
     return cav.toDataURL(picture)
+
   }
+  
   this.getIsoline = function(config, key) {
-    if (!this.alow()) return false
+
+    if ( !this.alow() ) {
+
+      return false
+
+    }
+
     var cav = mix(
-      [getIsoline(this.option, this.isoline, config)],
+      [
+        getIsoline(this.option, this.isoline, config)
+      ],
       this.option,
       config
     )
-    if (key) return cav
+
+    if ( key ) {
+
+      return cav
+
+    }
+
     return cav.toDataURL(picture)
+
   }
+
   this.getIsoImage = function(config, key) {
-    if (!this.alow()) return false
+    
+    if ( !this.alow() ) {
+
+      return false
+
+    }
+
     var cav = mix(
       [
         getIsosurface(this.option, this.pointGrid, this.isosurface, config),
@@ -81,22 +128,51 @@ export default function IsoImage(points, opt, callBack) {
       this.option,
       config
     )
-    if (key) return cav
+
+    if ( key ) {
+
+      return cav
+
+    }
+
     return cav.toDataURL(picture)
+
   }
   this.getLegend = function(config, key) {
+    
     var level = this.option.level || []
     var legend = getLegend(level, config)
-    if (!legend) return false
-    if (key) return legend
+
+    if ( !legend ) {
+
+      return false
+
+    }
+
+    if ( key ) {
+
+      return legend
+
+    }
+    
     return legend.toDataURL('image/png')
+
   }
   this.layer = function(map, config) {
-    if (!existLeaflet()) return
+
+    if ( !existLeaflet() ) {
+
+      return false
+
+    } 
+    
     config = Object.assign({}, {
+
       padding: 0.5,
       opacity: 0.1
+
     }, config)
+
     var clipLayer = ClipLayer(config)
     var style = {
       stroke: true,
@@ -107,56 +183,112 @@ export default function IsoImage(points, opt, callBack) {
       fillColor: '#ff0000',
       renderer: clipLayer
     }
+
     L['polygon'](this.option.fmtClip, style).addTo(map)
+
     config.clipLayer = clipLayer
+
     var isoLayer = IsoLayer(config)
+
     return isoLayer
+
   }
+
   this.getLeafletIsosurface = function(layer, config) {
-    if (!existLeaflet()) return
+
+    if ( !existLeaflet() ) return
+
     var d = this.fmtLatlngsIsosurface
     var group = leafletImage(d, 'polygon', layer, config)
     return L.featureGroup(group)
   }
   this.getLeafletIsoline = function(layer, config) {
-    if (!existLeaflet()) return
+    if ( !existLeaflet() ) {
+
+      return false
+
+    }
+
     var d = this.fmtLatlngsIsoline
     var group = leafletImage(d, 'polyline', layer, config)
+
     return L.featureGroup(group)
+
   }
   this.getLeafletIsoImage = function(layer, config) {
-    if (!existLeaflet()) return
+
+    if ( !existLeaflet() ) {
+
+      return false
+
+    }
+
     var isosurface = this.fmtLatlngsIsosurface
     var isoline = this.fmtLatlngsIsoline
     var isosurfaceGroup = leafletImage(isosurface, 'polygon', layer, config)
     var isolineGroup = leafletImage(isoline, 'polyline', layer, config)
     var group = isosurfaceGroup.concat(isolineGroup)
+
     return L.featureGroup(group)
+
   }
+
   this.getLeafletLegend = function(config) {
-    if (!existLeaflet()) return
+
+    if ( !existLeaflet() ) {
+
+      return false
+
+    }
+
     config = Object.assign({}, {
+
       position: 'bottomleft',
       gradient: true
+
     }, config)
+
     var level = this.option.level || []
     var legend = getLegend(level, config)
-    if (!legend) return false
+
+    if ( !legend ) {
+
+      return false
+
+    }
+
     config.canvas = legend
+    
     return leafletLegend(config)
+
   }
+
 }
 
 IsoImage.prototype = {
   constructor: IsoImage,
   initialize: function(points, opt, callBack) {
+
     // this.turfIsolines = opt.turfIsolines || window['turfIsolines']
     // this.turfPointGrid = opt.turfPointGrid || window['turfPointGrid']
+
     var ex = opt.extent
     var level = opt.level
-    if (!ex) return console.log('缺少参数extent(画布左上右下坐标)')
-    if (!level) return console.log('缺少参数level(色阶)')
+
+    if ( !ex ) {
+
+      return console.log('缺少参数extent(画布左上右下坐标)')
+
+    } 
+
+    if ( !level ) {
+
+      return console.log('缺少参数level(色阶)')
+
+    }
+
     level = fmtLevel(level)
+    
     var extent = [
       min(ex[0][0], ex[1][0]),
       min(ex[0][1], ex[1][1]),
@@ -165,9 +297,17 @@ IsoImage.prototype = {
     ]
     var size = [ex[1][0] - ex[0][0], ex[1][1] - ex[0][1]]
     var cellWidth = opt.cellWidth || round((abs(size[0]) / 200) * flot) / flot
-    if (isIE) cellWidth *= 3
+
+    if ( isIE ) {
+
+      cellWidth *= 3
+
+    }
+
     var key = Object.assign({}, defaultKeyConfig, opt.keyConfig)
+
     this.option = {
+
       worker: opt.worker,
       type: opt.type || 'idw',
       pow: opt.pow || 3,
@@ -181,17 +321,28 @@ IsoImage.prototype = {
       cellWidth: cellWidth,
       level: level,
       key: key
+
     }
-    var p = [],
-      v = [],
-      x = [],
-      y = []
-    if (isArray(points)) {
+
+    var p = []
+    var v = []
+    var x = []
+    var y = []
+    
+    if ( isArray(points) ) {
+
       for (var i = 0, len = points.length; i < len; i++) {
-        if (points[i][key.v] == void 0) continue
+
+        if ( points[i][key.v] == void 0 ) {
+
+          continue
+
+        }
+
         var _v = points[i][key.v]
         var _x = points[i][key.x]
         var _y = points[i][key.y]
+
         p.push({
           x: _x,
           y: _y,
@@ -200,28 +351,44 @@ IsoImage.prototype = {
         v.push(_v)
         x.push(_x)
         y.push(_y)
+
       }
+
     }
+
     this.points = p
     this._v = v
-    this._x = x
     this._y = y
+
     var that = this
-    if (opt.worker && window.Worker && !isIE) {
+
+    if ( opt.worker && window.Worker && !isIE ) {
+
       var pointGridWorker = new Worker(opt.worker + '/turf.js')
+
       pointGridWorker.onmessage = function(e) {
+
         that.pointGrid = e.data
         that.calcGridValue()
+
         callBack && that.initReady(callBack)
+
       }
+
       pointGridWorker.postMessage(['pointGrid', extent, cellWidth, { units: units }])
-      return
+
+      return false
+
     }
+
     this.pointGrid = turfPointGrid(extent, cellWidth, { units: units })
     this.calcGridValue()
+
     callBack && this.initReady(callBack)
+
   },
   calcGridValue: function() {
+
     var opt = this.option
     var pointGrid = this.pointGrid
     var a = this._v
@@ -230,83 +397,145 @@ IsoImage.prototype = {
     var d = opt.model
     var e = sigma2
     var f = alpha
+
     switch (opt.type) {
+
       case 'kriging':
-        if (opt.worker && window.Worker && !isIE) {
+
+        if ( opt.worker && window.Worker && !isIE ) {
+
           var krigingWorker = new Worker(opt.worker + '/' + opt.type + '.js')
           var that = this
+
           krigingWorker.onmessage = function(e) {
+
             that.pointGrid = e.data
+
+            this._x = x
+
             that.pointGridState = true
             that.calcIso()
+
           }
+
           krigingWorker.postMessage([pointGrid, a, b, c, d, e, f])
-          return
+
+          return false
+
         }
+
         var variogram = kriging.train(a, b, c, d, e, f )
+
         for (var i = 0; i < pointGrid.features.length; i++) {
+
           var krigingVal = kriging.predict(
+
             pointGrid.features[i].geometry.coordinates[0],
             pointGrid.features[i].geometry.coordinates[1],
             variogram
+
           )
+
           pointGrid.features[i].properties.val = krigingVal
+
         }
+
         this.pointGridState = true
         this.calcIso()
+
         break
+
       default:
+
         var points = this.points
-        if (opt.worker && window.Worker && !isIE) {
+
+        if ( opt.worker && window.Worker && !isIE ) {
+
           var defaultWorker = new Worker(opt.worker + '/' + opt.type + '.js')
           var that = this
+
           defaultWorker.onmessage = function(e) {
+
             that.pointGrid = e.data
             that.pointGridState = true
             that.calcIso()
+
           }
+
           defaultWorker.postMessage([points, pointGrid, opt.pow])
-          return
+
+          return false
+
         }
+
         this.pointGrid = idw(points, pointGrid, opt.pow)
         this.pointGridState = true
+
         this.calcIso()
+
         break
+
     }
+
   },
   calcIso: function() {
+
     var opt = this.option
     var pointGrid = this.pointGrid
     var level = opt.level
     var breaks = []
     var that = this
-    for (var i = 0, len = level.length; i < len; i++)
+
+    for (var i = 0, len = level.length; i < len; i++) {
+
       breaks.push(level[i].value)
-    if (opt.worker && window.Worker && !isIE) {
+
+    }
+
+    if ( opt.worker && window.Worker && !isIE ) {
+
       var turfIsolinesWorker = new Worker(opt.worker + '/turf.js')
       var that = this
+
       turfIsolinesWorker.onmessage = function(e) {
+
         var lines = e.data
+
         that.isoline = lines
         that.isosurface = calcBlock(lines, opt.extent, pointGrid, level)
         that.fmtLatlngsIsoline = fmtGeoJson(that.isoline)
         that.fmtLatlngsIsosurface = fmtGeoJson(that.isosurface)
         that.isoLinesState = true
+
       }
+
       turfIsolinesWorker.postMessage(['isolines', pointGrid, breaks, { zProperty: 'val' }, level])
-      return
+
+      return false
+
     }
+    
     var lines = turfIsolines(pointGrid, breaks, { zProperty: 'val' })
     var d = lines.features
+
     for (var i = 0, len = d.length; i < len; i++) {
+
       var val = d[i].properties.val
+
       for (var q = 0; level[q]; q++) {
-        if (level[q].value == val) {
+        
+        if ( level[q].value == val ) {
+
           d[i].properties.color = level[q].color
+
           break
+
         }
+
       }
+
     }
+
     // 等值线平滑处理 会对 calcBlock 计算产生影响
     // if (opt.smooth) {
     //   var _lFeatures = lines.features
@@ -322,30 +551,47 @@ IsoImage.prototype = {
     //     _lFeatures[i].geometry.coordinates = _lCoords
     //   }
     // }
+
     this.isoline = lines
     this.isosurface = calcBlock(lines, opt.extent, pointGrid, level)
     this.fmtLatlngsIsoline = fmtGeoJson(this.isoline)
     this.fmtLatlngsIsosurface = fmtGeoJson(this.isosurface)
     this.isoLinesState = true
+
   },
   alow: function() {
+
     return this.pointGrid && this.isoline
+
   },
   initReady: function(callBack, config) {
+
     var timer = null
     var that = this
+
     timer = setInterval(function() {
-      if (that.pointGridState && that.isoLinesState) {
+
+      if ( that.pointGridState && that.isoLinesState ) {
+
         clearInterval(timer)
+
         callBack && callBack(that, config)
+
       }
+
     }, 10)
+
   },
   remove: function() {
+
     for (var p in this) {
+
       delete this[p]
+
     }
+
     return this
+    
   }
 }
 
