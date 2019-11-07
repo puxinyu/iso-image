@@ -33,7 +33,7 @@
 |cellWidth|Number|计算精度|
 |keyConfig|Object|data/clip 数据 key 配置|
 |worker|String|worker 文件目录|
-|smooth|Boolean|平滑(弃用)|
+|smooth|Boolean|平滑|
 
  * function
 
