@@ -107,12 +107,14 @@
                   // })
 
                 }
-                // kriging
+                // kriging idw
                 var krigingImg = new IsoImage(data, {
-                  type: 'idw',
+                  type: 'idw', 
+                  pow: 3,
                   worker: './worker',
                   extent: [[118.3, 26.8], [120.3, 25]],
                   clip: clip,
+                  smooth: true,
                   level: [
                     { value: 0, color: '#ffffff', unit: 'mm' },
                     { value: 5, color: '#A9F18D', unit: 'mm' },
@@ -143,7 +145,7 @@
                     // direction: 'horizontal'
                   }).addTo(map)
 
-                  // console.log(that)
+                  console.log(that)
                   // var style = {
                   //   stroke: true,
                   //   weight: 1,

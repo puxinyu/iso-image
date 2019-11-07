@@ -34,7 +34,8 @@ export default function(d, type, layer, config) {
       fillOpacity: 0.7,
       color: v.properties.color,
       fillColor: v.properties.color,
-      renderer: layer
+      renderer: layer,
+      smoothFactor: 0.5
       
     }, config)
 

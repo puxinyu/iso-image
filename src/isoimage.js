@@ -20,6 +20,9 @@ import fmtLevel from './util/fmtLevel'
 import merge from './layer/merge'
 import turfPointGrid from '@turf/point-grid'
 import turfIsolines from '@turf/isolines'
+import bezierSpline from '@turf/bezier-spline'
+import { lineString } from '@turf/helpers'
+import Spline from './calc/Spline'
 
 var name = 'IsoImage'
 var picture = 'image/png'
@@ -269,9 +272,6 @@ IsoImage.prototype = {
   constructor: IsoImage,
   initialize: function(points, opt, callBack) {
 
-    // this.turfIsolines = opt.turfIsolines || window['turfIsolines']
-    // this.turfPointGrid = opt.turfPointGrid || window['turfPointGrid']
-
     var ex = opt.extent
     var level = opt.level
 
@@ -358,6 +358,7 @@ IsoImage.prototype = {
 
     this.points = p
     this._v = v
+    this._x = x
     this._y = y
 
     var that = this
@@ -410,9 +411,6 @@ IsoImage.prototype = {
           krigingWorker.onmessage = function(e) {
 
             that.pointGrid = e.data
-
-            this._x = x
-
             that.pointGridState = true
             that.calcIso()
 
@@ -503,8 +501,17 @@ IsoImage.prototype = {
 
         that.isoline = lines
         that.isosurface = calcBlock(lines, opt.extent, pointGrid, level)
+
+        if (opt.smooth) {
+          
+          that.isoline = that.smooth(that.isoline)
+          that.isosurface = that.smooth(that.isosurface)
+
+        }
+
         that.fmtLatlngsIsoline = fmtGeoJson(that.isoline)
         that.fmtLatlngsIsosurface = fmtGeoJson(that.isosurface)
+
         that.isoLinesState = true
 
       }
@@ -536,27 +543,75 @@ IsoImage.prototype = {
 
     }
 
-    // 等值线平滑处理 会对 calcBlock 计算产生影响
-    // if (opt.smooth) {
-    //   var _lFeatures = lines.features
-    //   for (var i = 0; i < _lFeatures.length; i++) {
-    //     var _coords = _lFeatures[i].geometry.coordinates
-    //     var _lCoords = []
-    //     for (var j = 0; j < _coords.length; j++) {
-    //       var _coord = _coords[j]
-    //       var line = turf.lineString(_coord)
-    //       var curved = turf.bezierSpline(line)
-    //       _lCoords.push(curved.geometry.coordinates)
-    //     }
-    //     _lFeatures[i].geometry.coordinates = _lCoords
-    //   }
-    // }
-
     this.isoline = lines
     this.isosurface = calcBlock(lines, opt.extent, pointGrid, level)
+
+    if (opt.smooth) {
+          
+      this.isoline = this.smooth(this.isoline)
+      this.isosurface = this.smooth(this.isosurface)
+
+    }
+
     this.fmtLatlngsIsoline = fmtGeoJson(this.isoline)
     this.fmtLatlngsIsosurface = fmtGeoJson(this.isosurface)
     this.isoLinesState = true
+
+  },
+  smooth: function(GeoJson) {
+
+    var lFeatures = GeoJson.features
+
+    for (var i = 0; i < lFeatures.length; i++) {
+      
+      var coords = lFeatures[i].geometry.coordinates
+      var lCoords = []
+
+      for (var j = 0; j < coords.length; j++) {
+        
+        var coord = coords[j]
+        var curved = Spline(coord, 5)
+        lCoords.push(curved)
+
+      }
+
+      lFeatures[i].geometry.coordinates = lCoords
+
+    }
+
+    return GeoJson
+
+  },
+  smooth2: function(GeoJson) {
+
+    var lFeatures = GeoJson.features
+
+    for (var i = 0; i < lFeatures.length; i++) {
+      
+      var coords = lFeatures[i].geometry.coordinates
+      var lCoords = []
+
+      for (var j = 0; j < coords.length; j++) {
+
+        var coord = coords[j]
+        var line = lineString(coord)
+        var curved = bezierSpline(line, {
+          
+          resolution: coord.length * 600,
+          sharpness: 0.85,
+          stepLength: 1
+
+        })
+
+        lCoords.push(curved.geometry.coordinates)
+
+      }
+
+      lFeatures[i].geometry.coordinates = lCoords
+
+    }
+
+    return GeoJson
 
   },
   alow: function() {
