@@ -108,8 +108,15 @@
 
                 }
                 // kriging idw
+                var urlparams = window.location.href.split('?').pop().split('&')
+                var type
+
+                for (var i = 0, len = urlparams.length; i < len; i++) {
+                  var df = urlparams[i].split('=')
+                  if (df[0] == 'type') type = df[1]
+                }
                 var krigingImg = new IsoImage(data, {
-                  type: 'idw', 
+                  type: type == 'kriging' ? 'kriging' : 'idw', 
                   pow: 3,
                   worker: './worker',
                   extent: [[118.3, 26.8], [120.3, 25]],
