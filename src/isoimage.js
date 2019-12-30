@@ -313,7 +313,7 @@ IsoImage.prototype = {
       pow: opt.pow || 3,
       model: opt.model || 'spherical', // gaussian|exponential|spherical
       clip: opt.clip,
-      fmtClip: fmtLatLng(JSON.parse(JSON.stringify(opt.clip)), 2, key.clipX, key.clipY),
+      fmtClip: opt.clip ? fmtLatLng(JSON.parse(JSON.stringify(opt.clip)), 2, key.clipX, key.clipY) : [],
       smooth: opt.smooth,
       ex: ex,
       extent: extent,

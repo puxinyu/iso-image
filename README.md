@@ -30,7 +30,7 @@
 |extent|Array|计算区域|
 |clip|Array|裁剪边界|
 |level|Array|色值等级|
-|cellWidth|Number|计算精度|
+|cellWidth|Number|计算精度 尽量确保总网格数在 2000 - 20000 之间|
 |keyConfig|Object|data/clip 数据 key 配置|
 |worker|String|worker 文件目录|
 |smooth|Boolean|平滑|

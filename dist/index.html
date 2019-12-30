@@ -16,20 +16,20 @@
       var getJson = function (url) {
         var xmlhttp = new XMLHttpRequest()
         xmlhttp.onreadystatechange = function () {
-            if (xmlhttp.readyState === 4) {
-              if (xmlhttp.status === 200) {
-                var ret = JSON.parse(xmlhttp.responseText)
-                var features = ret.features || []
-                for (var j = 0; features[j]; j++) {
-                  var rings = features[j].geometry.rings
-                  clip = clip.concat(rings)
-                }
-              } else {
-                error(xmlhttp.responseText)
+          if (xmlhttp.readyState === 4) {
+            if (xmlhttp.status === 200) {
+              var ret = JSON.parse(xmlhttp.responseText)
+              var features = ret.features || []
+              for (var j = 0; features[j]; j++) {
+                var rings = features[j].geometry.rings
+                clip = clip.concat(rings)
               }
-              ajax++
-              doNext()
+            } else {
+              error(xmlhttp.responseText)
             }
+            ajax++
+            doNext()
+          }
         };
         xmlhttp.open('GET', url)
         xmlhttp.send()
@@ -43,7 +43,7 @@
 
       function doNext () {
         if (!(areacode.length == ajax)) return
-        var url = './data.json'
+        var url = './data/data.json'
         var xmlhttp = new XMLHttpRequest()
         xmlhttp.onreadystatechange = function () {
             if (xmlhttp.readyState === 4) {

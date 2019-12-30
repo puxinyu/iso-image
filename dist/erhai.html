@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>iso-image</title>
+    <script src="./iso-image-dev.js"></script>
+    <style>
+      body { background: #cecece; }
+    </style>
+  </head>
+  <body>
+    <script>
+      
+      function ajax(url, callBack) {
+        var xmlhttp = new XMLHttpRequest()
+        xmlhttp.onreadystatechange = function() {
+          if (xmlhttp.readyState === 4) {
+            if (xmlhttp.status === 200) {
+              var ret = JSON.parse(xmlhttp.responseText)
+              callBack(ret)
+            } else {
+              error(xmlhttp.responseText)
+            }
+          }
+        }
+        xmlhttp.open('GET', url)
+        xmlhttp.send()
+      }
+
+      ajax('./data/lake.json', function(lake) {
+
+        var clip = lake.features[0].geometry.rings[0]
+
+        ajax('./data/erhai.json', function(ret) {
+
+          var dep = ret.dep
+          var grid = ret.grid
+          var data = []
+          var vs = {}
+
+          for (var i = 0, len = dep.length; i < len; i++) {
+
+            var it = dep[i]
+            vs[it.i + '-' + it.j] = +it.v 
+
+          }
+
+          for (var p in grid) {
+
+            var g = grid[p].split(',')
+            var x = (+g[0] + +g[2] + +g[4] + +g[6]) / 4
+            var y = (+g[1] + +g[3] + +g[5] + +g[7]) / 4
+            var v = vs[p]
+
+            if (v == void 0) continue
+
+            data.push({
+              x: x, y: y, v: v
+            })
+
+          }
+
+          var isoImage = new IsoImage(data, {
+            type: 'idw',
+            worker: './worker',
+            extent: [[100.09, 26], [100.29, 25.6]],
+            clip: clip,
+            level: [
+              { value: 0, color: '#4472c4' },
+              { value: 0.2, color: '#3c7aca' },
+              { value: 0.4, color: '#3183d0' },
+              { value: 0.6, color: '#2390da' },
+              { value: 0.8, color: '#179ce1' },
+              { value: 1.0, color: '#09a8eb' },
+              { value: 1.2, color: '#01b2e9' },
+              { value: 1.4, color: '#03c6ab' },
+              { value: 1.6, color: '#08e356' },
+              { value: 1.8, color: '#0bfd06' }
+            ],
+            cellWidth: 0.005,
+            keyConfig: {
+              x: 'x',
+              y: 'y',
+              v: 'v',
+              clipX: '0',
+              clipY: '1'
+            }
+          })
+
+          isoImage.initReady(function() {
+
+            var imgUrl = isoImage.getIsosurface({
+              width: 300,
+              opacity: 1,
+              gradient: false,
+              isolineColor: '#666',
+              clipColor: '#333',
+              clipWidth: 1
+            })
+
+            var img = new Image()
+
+            img.src = imgUrl
+            document.body.appendChild(img)
+            
+          })
+
+        })
+
+      })
+
+    </script>
+  </body>
+</html>

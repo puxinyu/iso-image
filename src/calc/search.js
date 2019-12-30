@@ -77,6 +77,7 @@ var search = function(catchLine, extent, side, arr, d, limit, nArr) {
     } else {
 
       coor = newSpace(catchLine[fp.coor].coor)
+
       fp.d && coor.reverse()
       arr = arr.concat(coor)
 
