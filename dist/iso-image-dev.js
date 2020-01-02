@@ -710,6 +710,48 @@
     
   };
 
+  var getExtent = function(features) {
+
+    var minx;
+    var miny;
+    var maxx;
+    var maxy;
+
+    for (var i = 0, iLen = features.length; i < iLen; i++) {
+
+      var coors = features[i].geometry.coordinates;
+
+      for (var j = 0, jLen = coors.length; j < jLen; j++) {
+
+        var cLen = coors[j].length;
+
+        if (!cLen) continue
+
+        if (minx == void 0) {
+
+          minx = maxx = coors[j][0][0];
+          miny = maxy = coors[j][0][1];
+
+        }
+
+        minx = Math.min(minx, coors[j][0][0], coors[j][cLen - 1][0]);
+        miny = Math.min(miny, coors[j][0][1], coors[j][cLen - 1][1]);
+        maxx = Math.max(maxx, coors[j][0][0], coors[j][cLen - 1][0]);
+        maxy = Math.max(maxy, coors[j][0][1], coors[j][cLen - 1][1]);
+
+      }
+
+    }
+
+    return [
+      minx,
+      miny,
+      maxx,
+      maxy
+    ]
+
+  };
+
   /**
    * 查询封闭多边形
    * @param {等值线} catchLine 
@@ -722,6 +764,8 @@
    */
 
   var search = function(catchLine, extent, side, arr, d, limit, nArr) {
+
+    // return false
 
     nArr = nArr || [];
 
@@ -1436,8 +1480,10 @@
     if ( gradient ) {
 
       var p = pointGrid.features;
-      var w = Math.abs((cellWidth / size[0]) * width);
-      var h = Math.abs((cellWidth / size[1]) * height);
+      var cellx = size[0] / cellWidth > 1 ? p[Math.abs(Math.ceil(size[1] / cellWidth)) + 1].geometry.coordinates[0] - p[0].geometry.coordinates[0] : cellWidth;
+      var celly = size[1] / cellWidth > 1 ? p[1].geometry.coordinates[1] - p[0].geometry.coordinates[1] : cellWidth;
+      var w = Math.abs((cellx / size[0]) * width);
+      var h = Math.abs((celly / size[1]) * height);
 
       for (var i = 0, len = p.length; i < len; i++) {
 
@@ -4912,17 +4958,30 @@
           var lines = e.data;
 
           that.isoline = lines;
-          that.isosurface = calcBlock(lines, opt.extent, pointGrid, level);
+
+          var linesExtent = getExtent(lines.features);
+
+          try {
+
+            that.isosurface = calcBlock(lines, linesExtent, pointGrid, level);
+
+          } catch (err) {
+
+            console.log(err);
+
+          }
 
           if (opt.smooth) {
             
             that.isoline = that.smooth(that.isoline);
-            that.isosurface = that.smooth(that.isosurface);
+
+            if (that.isosurface) that.isosurface = that.smooth(that.isosurface);
 
           }
 
           that.fmtLatlngsIsoline = fmtGeoJson(that.isoline);
-          that.fmtLatlngsIsosurface = fmtGeoJson(that.isosurface);
+
+          if (that.isosurface) that.fmtLatlngsIsosurface = fmtGeoJson(that.isosurface);
 
           that.isoLinesState = true;
 

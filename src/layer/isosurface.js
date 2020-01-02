@@ -34,8 +34,10 @@ export default function(opt, pointGrid, isosurface, config) {
   if ( gradient ) {
 
     var p = pointGrid.features
-    var w = Math.abs((cellWidth / size[0]) * width)
-    var h = Math.abs((cellWidth / size[1]) * height)
+    var cellx = size[0] / cellWidth > 1 ? p[Math.abs(Math.ceil(size[1] / cellWidth)) + 1].geometry.coordinates[0] - p[0].geometry.coordinates[0] : cellWidth
+    var celly = size[1] / cellWidth > 1 ? p[1].geometry.coordinates[1] - p[0].geometry.coordinates[1] : cellWidth
+    var w = Math.abs((cellx / size[0]) * width)
+    var h = Math.abs((celly / size[1]) * height)
 
     for (var i = 0, len = p.length; i < len; i++) {
 

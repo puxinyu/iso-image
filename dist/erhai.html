@@ -61,10 +61,10 @@
           }
           
           var isoImage = new IsoImage(data, {
-            type: 'idw',
+            type: 'kriging', // kriging idw
             worker: './worker',
             extent: [[100.09, 26], [100.29, 25.6]],
-            clip: clip,
+            // clip: clip,
             level: [
               { value: 0, color: '#4472c4' },
               { value: 0.1, color: '#3c7aca' },
@@ -94,7 +94,7 @@
               { value: 2.5, color: '#ff2f1a' },
               { value: 2.6, color: '#ff2c1c' }
             ],
-            cellWidth: 0.005,
+            cellWidth: 0.01,
             keyConfig: {
               x: 'x',
               y: 'y',
@@ -106,13 +106,10 @@
 
           isoImage.initReady(function() {
 
-            var imgUrl = isoImage.getIsosurface({
-              width: 400,
+            var imgUrl = isoImage.getIsoImage({
+              width: 800,
               opacity: 1,
-              gradient: false,
-              isolineColor: '#666',
-              clipColor: '#333',
-              clipWidth: 1
+              gradient: true
             })
 
             var img = new Image()

@@ -13,7 +13,7 @@ import getIsoline from './layer/isoline'
 import mix from './layer/mix'
 import fmtGeoJson, { fmtLatLng } from './util/fmtGeoJson'
 import { IsoLayer, ClipLayer } from './util/leafletLayer'
-import { isArray } from './util/common'
+import { isArray, getExtent } from './util/common'
 import leafletLegend from './util/leafletLegend'
 import leafletImage from './util/leafletImage'
 import fmtLevel from './util/fmtLevel'
@@ -500,17 +500,30 @@ IsoImage.prototype = {
         var lines = e.data
 
         that.isoline = lines
-        that.isosurface = calcBlock(lines, opt.extent, pointGrid, level)
+
+        var linesExtent = getExtent(lines.features)
+
+        try {
+
+          that.isosurface = calcBlock(lines, linesExtent, pointGrid, level)
+
+        } catch (err) {
+
+          console.log(err)
+
+        }
 
         if (opt.smooth) {
           
           that.isoline = that.smooth(that.isoline)
-          that.isosurface = that.smooth(that.isosurface)
+
+          if (that.isosurface) that.isosurface = that.smooth(that.isosurface)
 
         }
 
         that.fmtLatlngsIsoline = fmtGeoJson(that.isoline)
-        that.fmtLatlngsIsosurface = fmtGeoJson(that.isosurface)
+
+        if (that.isosurface) that.fmtLatlngsIsosurface = fmtGeoJson(that.isosurface)
 
         that.isoLinesState = true
 

@@ -13,6 +13,8 @@ import { newSpace, samePoint } from '../util/common'
 
 var search = function(catchLine, extent, side, arr, d, limit, nArr) {
 
+  // return false
+
   nArr = nArr || []
 
   var tp = arr[arr.length - 1]
