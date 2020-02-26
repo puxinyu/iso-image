@@ -61,8 +61,10 @@ export default function IsoImage(points, opt, callBack) {
 
   this.name = name
 
+  // 初始化
   this.initialize(points, opt, callBack)
 
+  // 获取等值面
   this.getIsosurface = function(config, key) {
 
     if ( !this.alow() ) {
@@ -89,6 +91,7 @@ export default function IsoImage(points, opt, callBack) {
 
   }
   
+  // 获取等值线
   this.getIsoline = function(config, key) {
 
     if ( !this.alow() ) {
@@ -115,6 +118,7 @@ export default function IsoImage(points, opt, callBack) {
 
   }
 
+  // 获取等值面+等值线
   this.getIsoImage = function(config, key) {
     
     if ( !this.alow() ) {
@@ -141,6 +145,8 @@ export default function IsoImage(points, opt, callBack) {
     return cav.toDataURL(picture)
 
   }
+
+  // 获取图例
   this.getLegend = function(config, key) {
     
     var level = this.option.level || []
@@ -161,6 +167,8 @@ export default function IsoImage(points, opt, callBack) {
     return legend.toDataURL('image/png')
 
   }
+
+  // 地图图层
   this.layer = function(map, config) {
 
     if ( !existLeaflet() ) {
@@ -197,6 +205,7 @@ export default function IsoImage(points, opt, callBack) {
 
   }
 
+  // 地图 获取等值面
   this.getLeafletIsosurface = function(layer, config) {
 
     if ( !existLeaflet() ) return
@@ -205,6 +214,8 @@ export default function IsoImage(points, opt, callBack) {
     var group = leafletImage(d, 'polygon', layer, config)
     return L.featureGroup(group)
   }
+
+  // 地图 获取等值线
   this.getLeafletIsoline = function(layer, config) {
     if ( !existLeaflet() ) {
 
@@ -218,6 +229,8 @@ export default function IsoImage(points, opt, callBack) {
     return L.featureGroup(group)
 
   }
+
+  // 地图 获取等值面+等值线
   this.getLeafletIsoImage = function(layer, config) {
 
     if ( !existLeaflet() ) {
@@ -236,6 +249,7 @@ export default function IsoImage(points, opt, callBack) {
 
   }
 
+  // 地图 获取图例
   this.getLeafletLegend = function(config) {
 
     if ( !existLeaflet() ) {
@@ -269,7 +283,16 @@ export default function IsoImage(points, opt, callBack) {
 }
 
 IsoImage.prototype = {
+  /**
+   * 
+   */
   constructor: IsoImage,
+  /**
+   * 初始化
+   * @param {*} points 
+   * @param {*} opt 
+   * @param {*} callBack 
+   */
   initialize: function(points, opt, callBack) {
 
     var ex = opt.extent
@@ -388,6 +411,9 @@ IsoImage.prototype = {
     callBack && this.initReady(callBack)
 
   },
+  /**
+   * 计算网格值
+   */
   calcGridValue: function() {
 
     var opt = this.option
@@ -476,6 +502,9 @@ IsoImage.prototype = {
     }
 
   },
+  /**
+   * 计算等值线 面
+   */
   calcIso: function() {
 
     var opt = this.option
@@ -571,6 +600,10 @@ IsoImage.prototype = {
     this.isoLinesState = true
 
   },
+  /**
+   * 平滑
+   * @param {*} GeoJson 
+   */
   smooth: function(GeoJson) {
 
     var lFeatures = GeoJson.features
@@ -595,6 +628,10 @@ IsoImage.prototype = {
     return GeoJson
 
   },
+  /**
+   * 平滑
+   * @param {*} GeoJson 
+   */
   smooth2: function(GeoJson) {
 
     var lFeatures = GeoJson.features
@@ -627,11 +664,17 @@ IsoImage.prototype = {
     return GeoJson
 
   },
+  /**
+   * 计算完成检测
+   */
   alow: function() {
 
     return this.pointGrid && this.isoline
 
   },
+  /**
+   * 准备好了吗？
+   */
   initReady: function(callBack, config) {
 
     var timer = null
@@ -650,6 +693,9 @@ IsoImage.prototype = {
     }, 10)
 
   },
+  /**
+   * 移除
+   */
   remove: function() {
 
     for (var p in this) {

@@ -1,8 +1,8 @@
 
 /**
  * [lng, lat] => [lat, lng]
- * @param {经纬度数组} latlngs 
- * @param {数组层级} deep 
+ * @param {Array} latlngs 经纬度数组
+ * @param {Number} deep 数组层级
  */
 
 import { newSpace } from './common'

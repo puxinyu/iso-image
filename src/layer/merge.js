@@ -1,9 +1,9 @@
 /**
  * @author kongkongbuding
  * @since 2019.08.08
- * @param {isoimage 对象数组} isoimages 
- * @param {配置项} opt 
- * @param {回调} callBack 
+ * @param {Array} isoimages isoimage 对象数组
+ * @param {Object} opt 配置项
+ * @param {Function} callBack 回调
  */
 
 import { isArray } from '../util/common'

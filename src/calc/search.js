@@ -1,12 +1,12 @@
 /**
  * 查询封闭多边形
- * @param {等值线} catchLine 
- * @param {区域范围} extent 
- * @param {边上的交叉点} side 
- * @param {查询出的封闭多边形} arr 
- * @param {当前查询方位} d 
- * @param {查询限制 用于方向查询} limit 
- * @param {查询分支} nArr 
+ * @param {*} catchLine 等值线
+ * @param {*} extent 区域范围
+ * @param {*} side 边上的交叉点
+ * @param {*} arr 查询出的封闭多边形
+ * @param {*} d 当前查询方位
+ * @param {*} limit 查询限制 用于方向查询
+ * @param {*} nArr 查询分支
  */
 
 import { newSpace, samePoint } from '../util/common'

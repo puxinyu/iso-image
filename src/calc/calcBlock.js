@@ -37,10 +37,10 @@ var calcDir = function (p, ex) {
 
 /**
  * 
- * @param {等值线} lines 
- * @param {[min-lat-左, min-lng-下, max-lat-右, max-lng-上]} extent 
- * @param {网格数据} pointGrid
- * @param {颜色级别} level
+ * @param {Object} lines 等值线
+ * @param {Array} extent [min-lat-左, min-lng-下, max-lat-右, max-lng-上]
+ * @param {*} pointGrid 网格数据
+ * @param {Array} level 颜色级别
  */
 
 export default function(lines, extent, pointGrid, level) {

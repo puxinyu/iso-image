@@ -2,8 +2,8 @@
  * 图片叠加 透明度处理
  * @author kongkongbuding
  * @since 2019.08.08
- * @param {canvas数组} cavs
- * @param {opacity: 透明度} config
+ * @param {Array} cavs canvas数组
+ * @param {Object} config {opacity: 透明度}
  */
 
 import { isArray } from '../util/common'

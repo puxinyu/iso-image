@@ -2,10 +2,10 @@
  * 绘制等值面
  * @author kongkongbuding
  * @since 2019.08.08
- * @param {isoimage option} opt
- * @param {网格} pointGrid
- * @param {} isosurface
- * @param {图片配置 width: 图片宽度 opacity: 透明度 gradient 是否渐变, filter 过滤筛选 } config
+ * @param {Object} opt isoimage option
+ * @param {Object} pointGrid 网格
+ * @param {Object} isosurface
+ * @param {Object} config 图片配置 width: 图片宽度 opacity: 透明度 gradient 是否渐变, filter 过滤筛选 
  */
 
 import getColor from '../calc/getColor'

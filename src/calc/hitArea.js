@@ -2,8 +2,8 @@
  * 点在面内
  * @author kongkongbuding
  * @since 2019.08.08
- * @param {点} point 
- * @param {面} polygon 
+ * @param {Array} point 点
+ * @param {Array} polygon 面
  */
 
 var hitArea = function(point, polygon){   

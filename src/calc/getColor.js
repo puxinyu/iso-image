@@ -2,9 +2,9 @@
  * 获取色值
  * @author kongkongbuding
  * @since 2019.08.08
- * @param {颜色等级} arr 
- * @param {值} v 
- * @param {是否渐变} gradient 
+ * @param {Array} arr 颜色等级
+ * @param {Number} v 值
+ * @param {Boolean} gradient 是否渐变
  */
 
 var getColor = function(arr, v, gradient) {

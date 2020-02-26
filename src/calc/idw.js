@@ -2,9 +2,9 @@
  * 反距离平方权重法
  * @author kongkongbuding
  * @since 2019.08.08
- * @param {数据点} points
- * @param {网格点} pointGrid
- * @param {权重系数} pow
+ * @param {Array} points 数据点
+ * @param {Object} pointGrid 网格点
+ * @param {Number} pow 权重系数
  */
 
 export default function(points, pointGrid, pow) {
