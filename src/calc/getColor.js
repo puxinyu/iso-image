@@ -27,7 +27,7 @@ var getColor = function(arr, v, gradient) {
       var f = function(k) {
 
         return gradient
-          ? parseInt(color[k] + (arr[i][k] - color[k]) * scale)
+          ? color[k] + (arr[i][k] - color[k]) * scale
           : arr[i][k]
 
       }
@@ -35,6 +35,7 @@ var getColor = function(arr, v, gradient) {
       color.r = f('r')
       color.g = f('g')
       color.b = f('b')
+      color.a = f('a')
 
       break
 

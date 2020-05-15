@@ -15,14 +15,18 @@ var floor = Math.floor
 
 var calcDir = function (p, ex) {
 
-  var t = 0
-  var dir = max(dist(ex[0], ex[2]), dist(ex[1], ex[3]))
+  var t = -1
+  var dir = Infinity
+  var min = [
+    Math.abs(ex[0] - ex[2]) / 10,
+    Math.abs(ex[1] - ex[3]) / 10
+  ]
 
   for (var i = 0; i < 4; i++) {
 
     var iDir = dist(ex[i], p[i % 2])
 
-    if ( iDir < dir ) {
+    if ( iDir < min[i % 2] && iDir < dir ) {
 
       dir = iDir
       t = i
@@ -31,8 +35,45 @@ var calcDir = function (p, ex) {
 
   }
 
-  return 'lbrt'.charAt(t)
+  if (t < 0) return false
+
+  var dt = 'lbrt'.charAt(t)
+
+  return dt
   
+}
+
+var offsetPoints = function(lines) {
+
+  for (let p in lines) {
+
+    let line = lines[p]
+
+    for (let i = 0, len = line.length; i < len; i++) {
+
+      let v = line[i]
+
+      if (v.t != p) continue
+
+      let index = p == 't' || p == 'b' ? 0 : 1
+
+      for (let j = 0; j < len; j++) {
+
+        let u = line[j]
+
+        if (v.coor == u.coor || v.d != u.d) continue
+
+        if (v.p[index] == u.p[index]) v.p[index] += (u.end[index] - v.end[index]) * 0.1
+        if (v.end[index] == u.end[index]) v.end[index] += (u.p[index] - v.p[index]) * 0.1
+
+      }
+
+    }
+
+  }
+
+  return lines
+
 }
 
 /**
@@ -94,6 +135,8 @@ export default function(lines, extent, pointGrid, level) {
 
         var fd = calcDir(first, extent)
         var ld = calcDir(last, extent)
+        
+        if (!fd || !ld) continue
 
         side[fd].push( {
 
@@ -129,6 +172,8 @@ export default function(lines, extent, pointGrid, level) {
     sd: [extent[0], extent[1]]
 
   }
+
+  side = offsetPoints(side)
 
   open = search(catchLine, searchExtent, side, [searchExtent['sa']], 't', false)
 
@@ -333,7 +378,7 @@ export default function(lines, extent, pointGrid, level) {
 
       var _color = getColor(level, val, false)
 
-      color = 'rgb(' + _color.r + ',' + _color.g + ',' + _color.b + ')'
+      color = 'rgba(' + _color.r + ',' + _color.g + ',' + _color.b + ',' + _color.a + ')'
       val = _color.value
 
     }

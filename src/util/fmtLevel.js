@@ -14,6 +14,7 @@ var fmtLevel = function(level) {
     level[i].r = parseInt(color.substr(1, 2), 16)
     level[i].g = parseInt(color.substr(3, 2), 16)
     level[i].b = parseInt(color.substr(5, 2), 16)
+    level[i].a = parseInt(color.substr(7, 2) || 'ff', 16) / 255
 
   }
 

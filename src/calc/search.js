@@ -13,8 +13,6 @@ import { newSpace, samePoint } from '../util/common'
 
 var search = function(catchLine, extent, side, arr, d, limit, nArr) {
 
-  // return false
-
   nArr = nArr || []
 
   var tp = arr[arr.length - 1]
@@ -81,6 +79,7 @@ var search = function(catchLine, extent, side, arr, d, limit, nArr) {
       coor = newSpace(catchLine[fp.coor].coor)
 
       fp.d && coor.reverse()
+      
       arr = arr.concat(coor)
 
     }
@@ -101,9 +100,7 @@ var search = function(catchLine, extent, side, arr, d, limit, nArr) {
       
     }
 
-    arr = search(catchLine, extent, side, arr, to, limit, nArr)
-
-    return arr
+    return search(catchLine, extent, side, arr, to, limit, nArr)
 
   }
 

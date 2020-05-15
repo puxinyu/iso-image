@@ -220,9 +220,9 @@
    * 反距离平方权重法
    * @author kongkongbuding
    * @since 2019.08.08
-   * @param {数据点} points
-   * @param {网格点} pointGrid
-   * @param {权重系数} pow
+   * @param {Array} points 数据点
+   * @param {Object} pointGrid 网格点
+   * @param {Number} pow 权重系数
    */
 
   function idw(points, pointGrid, pow) {
@@ -657,8 +657,8 @@
    * 点在面内
    * @author kongkongbuding
    * @since 2019.08.08
-   * @param {点} point 
-   * @param {面} polygon 
+   * @param {Array} point 点
+   * @param {Array} polygon 面
    */
 
   var hitArea = function(point, polygon){   
@@ -684,9 +684,52 @@
 
   };
 
-  var newSpace = function(d) {
+  var O = Object.prototype.toString;
 
-    return JSON.parse(JSON.stringify(d))
+  var isArray = function(v) {
+    
+    return O.call(v) === '[object Array]'
+    
+  };
+
+  var isObject = function(v) {
+    
+    return O.call(v) === '[object Object]'
+    
+  };
+
+  var newSpace = function(d, f) {
+
+    if (f) return JSON.parse(JSON.stringify(d))
+
+    if (isArray(d)) {
+
+      if (d.length == 0 || (d.length > 0 && !isArray(d[0]) && !isObject(d[0])))
+        return Object.assign([], d, [])
+
+      var vd = [];
+
+      for (var i = 0, len = d.length; i < len; i++) {
+
+        vd.push(newSpace(d[i]));
+
+      }
+
+      return vd
+
+    }
+
+    if (isObject(d)) {
+
+      var nd = new Object();
+
+      for (var p in d) nd[p] = newSpace(d[p]);
+
+      return nd
+
+    }
+
+    return d
 
   };
 
@@ -702,12 +745,15 @@
 
   };
 
-  var O = Object.prototype.toString;
+  var signFigures = function(num, dec) {
 
-  var isArray = function(v) {
-    
-    return O.call(v) === '[object Array]'
-    
+    dec = dec == void 0 ? 1 : dec;
+
+    var toExponential = (+num).toExponential(dec);
+    var max = Number(toExponential);
+
+    return max
+
   };
 
   var getExtent = function(features) {
@@ -754,18 +800,16 @@
 
   /**
    * 查询封闭多边形
-   * @param {等值线} catchLine 
-   * @param {区域范围} extent 
-   * @param {边上的交叉点} side 
-   * @param {查询出的封闭多边形} arr 
-   * @param {当前查询方位} d 
-   * @param {查询限制 用于方向查询} limit 
-   * @param {查询分支} nArr 
+   * @param {*} catchLine 等值线
+   * @param {*} extent 区域范围
+   * @param {*} side 边上的交叉点
+   * @param {*} arr 查询出的封闭多边形
+   * @param {*} d 当前查询方位
+   * @param {*} limit 查询限制 用于方向查询
+   * @param {*} nArr 查询分支
    */
 
   var search = function(catchLine, extent, side, arr, d, limit, nArr) {
-
-    // return false
 
     nArr = nArr || [];
 
@@ -833,6 +877,7 @@
         coor = newSpace(catchLine[fp.coor].coor);
 
         fp.d && coor.reverse();
+        
         arr = arr.concat(coor);
 
       }
@@ -853,9 +898,7 @@
         
       }
 
-      arr = search(catchLine, extent, side, arr, to, limit, nArr);
-
-      return arr
+      return search(catchLine, extent, side, arr, to, limit, nArr)
 
     }
 
@@ -865,9 +908,9 @@
    * 获取色值
    * @author kongkongbuding
    * @since 2019.08.08
-   * @param {颜色等级} arr 
-   * @param {值} v 
-   * @param {是否渐变} gradient 
+   * @param {Array} arr 颜色等级
+   * @param {Number} v 值
+   * @param {Boolean} gradient 是否渐变
    */
 
   var getColor = function(arr, v, gradient) {
@@ -890,7 +933,7 @@
         var f = function(k) {
 
           return gradient
-            ? parseInt(color[k] + (arr[i][k] - color[k]) * scale)
+            ? color[k] + (arr[i][k] - color[k]) * scale
             : arr[i][k]
 
         };
@@ -898,6 +941,7 @@
         color.r = f('r');
         color.g = f('g');
         color.b = f('b');
+        color.a = f('a');
 
         break
 
@@ -926,14 +970,18 @@
 
   var calcDir = function (p, ex) {
 
-    var t = 0;
-    var dir = max$1(dist(ex[0], ex[2]), dist(ex[1], ex[3]));
+    var t = -1;
+    var dir = Infinity;
+    var min = [
+      Math.abs(ex[0] - ex[2]) / 10,
+      Math.abs(ex[1] - ex[3]) / 10
+    ];
 
     for (var i = 0; i < 4; i++) {
 
       var iDir = dist(ex[i], p[i % 2]);
 
-      if ( iDir < dir ) {
+      if ( iDir < min[i % 2] && iDir < dir ) {
 
         dir = iDir;
         t = i;
@@ -942,16 +990,53 @@
 
     }
 
-    return 'lbrt'.charAt(t)
+    if (t < 0) return false
+
+    var dt = 'lbrt'.charAt(t);
+
+    return dt
     
+  };
+
+  var offsetPoints = function(lines) {
+
+    for (let p in lines) {
+
+      let line = lines[p];
+
+      for (let i = 0, len = line.length; i < len; i++) {
+
+        let v = line[i];
+
+        if (v.t != p) continue
+
+        let index = p == 't' || p == 'b' ? 0 : 1;
+
+        for (let j = 0; j < len; j++) {
+
+          let u = line[j];
+
+          if (v.coor == u.coor || v.d != u.d) continue
+
+          if (v.p[index] == u.p[index]) v.p[index] += (u.end[index] - v.end[index]) * 0.1;
+          if (v.end[index] == u.end[index]) v.end[index] += (u.p[index] - v.p[index]) * 0.1;
+
+        }
+
+      }
+
+    }
+
+    return lines
+
   };
 
   /**
    * 
-   * @param {等值线} lines 
-   * @param {[min-lat-左, min-lng-下, max-lat-右, max-lng-上]} extent 
-   * @param {网格数据} pointGrid
-   * @param {颜色级别} level
+   * @param {Object} lines 等值线
+   * @param {Array} extent [min-lat-左, min-lng-下, max-lat-右, max-lng-上]
+   * @param {*} pointGrid 网格数据
+   * @param {Array} level 颜色级别
    */
 
   function calcBlock(lines, extent, pointGrid, level) {
@@ -1005,6 +1090,8 @@
 
           var fd = calcDir(first, extent);
           var ld = calcDir(last, extent);
+          
+          if (!fd || !ld) continue
 
           side[fd].push( {
 
@@ -1040,6 +1127,8 @@
       sd: [extent[0], extent[1]]
 
     };
+
+    side = offsetPoints(side);
 
     open = search(catchLine, searchExtent, side, [searchExtent['sa']], 't', false);
 
@@ -1244,7 +1333,7 @@
 
         var _color = getColor(level, val, false);
 
-        color = 'rgb(' + _color.r + ',' + _color.g + ',' + _color.b + ')';
+        color = 'rgba(' + _color.r + ',' + _color.g + ',' + _color.b + ',' + _color.a + ')';
         val = _color.value;
 
       }
@@ -1278,12 +1367,433 @@
     
   }
 
+  var Vector3 = function(a, b, c) {
+
+    this.x = a || 0;
+    this.y = b || 0;
+    this.z = c || 0;
+
+  };
+
+  Vector3.prototype = {
+    constructor: Vector3,
+    add: function(a) {
+
+      this.x += a.x;
+      this.y += a.y;
+      this.z += a.z;
+
+      return this
+
+    },
+    subVectors: function(a, b) {
+
+      this.x = a.x - b.x;
+      this.y = a.y - b.y;
+      this.z = a.z - b.z;
+
+      return this
+
+    },
+    distanceToSquared: function(a) {
+
+      var b = this.x - a.x;
+      var c = this.y - a.y;
+      var a = this.z - a.z;
+
+      return b * b + c * c + a * a
+
+    }
+  };
+
+  var CatmullRomCurve3 = (function() {
+
+    var Curve = function() {};
+
+    Curve.prototype = {
+      getPoint: function() {
+
+        console.log("Warning, getPoint() not implemented!");
+
+        return null
+
+      },
+      getPointAt: function(a) {
+
+        a = this.getUtoTmapping(a);
+
+        return this.getPoint(a)
+
+      },
+      getPoints: function(a) {
+
+        a || (a = 5);
+        var b;
+        var c = [];
+
+        for (b = 0; b <= a; b++) {
+
+          c.push(this.getPoint(b / a));
+
+        }
+
+        return c
+
+      },
+      getSpacedPoints: function (a) {
+
+        a || (a = 5);
+
+        var b;
+        var c = [];
+
+        for (b = 0; b <= a; b++) {
+          
+          c.push(this.getPointAt(b / a));
+
+        }
+
+        return c
+
+      },
+      getLength: function() {
+
+        var a = this.getLengths();
+
+        return a[a.length - 1]
+
+      },
+      getLengths: function(a) {
+
+        a || (a = this.__arcLengthDivisions ? this.__arcLengthDivisions : 200);
+
+        if ( this.cacheArcLengths && this.cacheArcLengths.length == a + 1 && !this.needsUpdate ) {
+
+          return this.cacheArcLengths
+
+        }
+
+        this.needsUpdate = !1;
+
+        var b = [];
+        var c;
+        var d = this.getPoint(0);
+        var e;
+        var f = 0;
+
+        b.push(0);
+
+        for (e = 1; e <= a; e++) {
+
+          c = this.getPoint(e / a);
+          f += c.distanceTo(d), b.push(f);
+          d = c;
+
+        }
+
+        return this.cacheArcLengths = b
+
+      },
+      updateArcLengths: function() {
+
+        this.needsUpdate = !0;
+
+        this.getLengths();
+
+      },
+      getUtoTmapping: function (a, b) {
+
+        var c = this.getLengths();
+        var d = 0;
+        var e = c.length;
+        var f;
+
+        f = b ? b : a * c[e - 1];
+
+        for (var h = 0, g = e - 1, i; h <= g;) {
+
+          if ( d = Math.floor(h + (g - h) / 2), i = c[d] - f, 0 > i ) {
+
+            h = d + 1;
+
+          } else if ( 0 < i ) {
+            
+            g = d - 1;
+
+          } else {
+            
+            g = d;
+
+            break
+
+          }
+
+        }
+
+        d = g;
+
+        if ( c[d] == f ) {
+
+          return d / (e - 1)
+
+        }
+
+        h = c[d];
+
+        return c = (d + (f - h) / (c[d + 1] - h)) / (e - 1)
+
+      },
+      getTangent: function(a) {
+
+        var b = a - 1E-4;
+        var a = a + 1E-4;
+
+        0 > b && (b = 0);
+        1 < a && (a = 1);
+
+        b = this.getPoint(b);
+
+        return this.getPoint(a).clone().sub(b).normalize()
+
+      },
+      getTangentAt: function(a) {
+
+        a = this.getUtoTmapping(a);
+
+        return this.getTangent(a)
+
+      }
+    };
+
+    Curve.Utils = {
+      tangentQuadraticBezier: function(a, b, c, d) {
+
+        return 2 * (1 - a) * (c - b) + 2 * a * (d - c)
+
+      },
+      tangentCubicBezier: function(a, b, c, d, e) {
+
+        return -3 * b * (1 - a) * (1 - a) + 3 * c * (1 - a) * (1 - a) - 6 * a * c * (1 - a) + 6 * a * d * (1 - a) - 3 * a * a * d + 3 * a * a * e
+
+      },
+      tangentSpline: function(a) {
+
+        return 6 * a * a - 6 * a + (3 * a * a - 4 * a + 1) + (-6 * a * a + 6 * a) + (3 * a * a - 2 * a)
+
+      },
+      interpolate: function(a, b, c, d, e) {
+
+        var a = 0.5 * (c - a);
+        var d = 0.5 * (d - b);
+        var f = e * e;
+
+        return (2 * b - 2 * c + a + d) * e * f + (-3 * b + 3 * c - 2 * a - d) * f + a * e + b
+
+      }
+    };
+
+    Curve.create = function(a, b) {
+
+      a.prototype = Object.create(Curve.prototype);
+      a.prototype.getPoint = b;
+
+      return a
+
+    };
+
+    var CubicPoly = function() {};
+
+    CubicPoly.prototype = {
+      init: function(x0, x1, t0, t1) {
+
+        this.c0 = x0;
+        this.c1 = t0;
+        this.c2 = -3 * x0 + 3 * x1 - 2 * t0 - t1;
+        this.c3 = 2 * x0 - 2 * x1 + t0 + t1;
+    
+      },
+      initNonuniformCatmullRom: function(x0, x1, x2, x3, dt0, dt1, dt2) {
+
+        var t1 = (x1 - x0) / dt0 - (x2 - x0) / (dt0 + dt1) + (x2 - x1) / dt1;
+        var t2 = (x2 - x1) / dt1 - (x3 - x1) / (dt1 + dt2) + (x3 - x2) / dt2;
+
+        t1 *= dt1;
+        t2 *= dt1;
+
+        this.init(x1, x2, t1, t2);
+    
+      },
+      initCatmullRom: function(x0, x1, x2, x3, tension) {
+
+        this.init(x1, x2, tension * (x2 - x0), tension * (x3 - x1));
+    
+      },
+      calc: function (t) {
+
+        var t2 = t * t;
+        var t3 = t2 * t;
+
+        return this.c0 + this.c1 * t + this.c2 * t2 + this.c3 * t3
+    
+      }
+    };
+
+    var tmp = new Vector3();
+    var px = new CubicPoly();
+    var py = new CubicPoly();
+    var pz = new CubicPoly();
+
+    return Curve.create(
+
+      function (p) {
+
+        this.points = p || [];
+        this.closed = false;
+
+      },
+
+      function (t) {
+
+        var points = this.points;
+        var point;
+        var intPoint;
+        var weight;
+        var l = points.length;
+
+        if (l < 2) {
+          
+          console.log('duh, you need at least 2 points');
+
+        }
+
+        point = (l - (this.closed ? 0 : 1)) * t;
+        intPoint = Math.floor(point);
+        weight = point - intPoint;
+
+        if ( this.closed ) {
+
+          intPoint += intPoint > 0 ? 0 : (Math.floor(Math.abs(intPoint) / points.length) + 1) * points.length;
+
+        } else if ( weight === 0 && intPoint === l - 1 ) {
+
+          intPoint = l - 2;
+          weight = 1;
+
+        }
+
+        var p0;
+        var p1;
+        var p2;
+        var p3;
+
+        if ( this.closed || intPoint > 0 ) {
+
+          p0 = points[(intPoint - 1) % l];
+
+        } else {
+
+          tmp.subVectors(points[0], points[1]).add(points[0]);
+          p0 = tmp;
+
+        }
+
+        p1 = points[intPoint % l];
+        p2 = points[(intPoint + 1) % l];
+
+        if ( this.closed || intPoint + 2 < l ) {
+
+          p3 = points[(intPoint + 2) % l];
+
+        } else {
+
+          tmp.subVectors(points[l - 1], points[l - 2]).add(points[l - 1]);
+          p3 = tmp;
+
+        }
+
+        if ( this.type === undefined || this.type === 'centripetal' || this.type === 'chordal' ) {
+
+          var pow = this.type === 'chordal' ? 0.5 : 0.25;
+          var dt0 = Math.pow(p0.distanceToSquared(p1), pow);
+          var dt1 = Math.pow(p1.distanceToSquared(p2), pow);
+          var dt2 = Math.pow(p2.distanceToSquared(p3), pow);
+
+          if (dt1 < 1e-4) {
+
+            dt1 = 1.0;
+
+          }
+
+          if (dt0 < 1e-4) {
+
+            dt0 = dt1;
+            
+          }
+
+          if (dt2 < 1e-4) {
+
+            dt2 = dt1;
+
+          }
+
+          px.initNonuniformCatmullRom(p0.x, p1.x, p2.x, p3.x, dt0, dt1, dt2);
+          py.initNonuniformCatmullRom(p0.y, p1.y, p2.y, p3.y, dt0, dt1, dt2);
+          pz.initNonuniformCatmullRom(p0.z, p1.z, p2.z, p3.z, dt0, dt1, dt2);
+
+        } else if ( this.type === 'catmullrom' ) {
+
+          var tension = this.tension !== undefined ? this.tension : 0.5;
+
+          px.initCatmullRom(p0.x, p1.x, p2.x, p3.x, tension);
+          py.initCatmullRom(p0.y, p1.y, p2.y, p3.y, tension);
+          pz.initCatmullRom(p0.z, p1.z, p2.z, p3.z, tension);
+
+        }
+
+        var v = new Vector3(
+          px.calc(weight),
+          py.calc(weight),
+          pz.calc(weight)
+        );
+
+        return v
+
+      }
+
+    )
+
+  })();
+
+  var Spline = function(vec, NumPoints) {
+
+    var ver = new Array();
+
+    for ( var i = 0; i < vec.length; i++ ) {
+
+      ver[i] = new Vector3(vec[i][0], vec[i][1], 0);
+
+    }
+
+    var curve = new CatmullRomCurve3(ver);
+    var spline = curve.getPoints(NumPoints * ver.length);
+    var splinePoints = new Array();
+
+    for (var i = 0; i < spline.length; i++) {
+      
+      splinePoints.push([spline[i].x, spline[i].y]);
+
+    }
+
+    return splinePoints
+    
+  };
+
   /**
    * 绘制图例
    * @author kongkongbuding
    * @since 2019.08.08
-   * @param {等级数组} level
-   * @param {} config
+   * @param {Array} level 等级数组
+   * @param {Object} config
    */
 
   var defaultConfig = {
@@ -1447,114 +1957,12 @@
   }
 
   /**
-   * 绘制等值面
-   * @author kongkongbuding
-   * @since 2019.08.08
-   * @param {isoimage option} opt
-   * @param {网格} pointGrid
-   * @param {} isosurface
-   * @param {图片配置 width: 图片宽度 opacity: 透明度 gradient 是否渐变, filter 过滤筛选 } config
-   */
-
-  function getIsosurface(opt, pointGrid, isosurface, config) {
-
-    config = config || {};
-
-    var gradient = config.gradient == void 0 ? true : config.gradient;
-    var size = opt.size;
-    var cellWidth = opt.cellWidth;
-    var level = opt.level;
-    var ex = opt.ex;
-    var filter = config.filter;
-    var width = config.width || 1000;
-    var height = Math.abs((width / size[0]) * size[1]);
-    var canvas = document.createElement('canvas');
-
-    canvas.width = width;
-    canvas.height = height;
-
-    var ctx = canvas.getContext('2d');
-
-    ctx.clearRect(0, 0, width, height);
-
-    if ( gradient ) {
-
-      var p = pointGrid.features;
-      var cellx = size[0] / cellWidth > 1 ? p[Math.abs(Math.ceil(size[1] / cellWidth)) + 1].geometry.coordinates[0] - p[0].geometry.coordinates[0] : cellWidth;
-      var celly = size[1] / cellWidth > 1 ? p[1].geometry.coordinates[1] - p[0].geometry.coordinates[1] : cellWidth;
-      var w = Math.abs((cellx / size[0]) * width);
-      var h = Math.abs((celly / size[1]) * height);
-
-      for (var i = 0, len = p.length; i < len; i++) {
-
-        var item = p[i].geometry.coordinates;
-        var x = ((item[0] - ex[0][0]) / size[0]) * width - w / 2;
-        var y = ((item[1] - ex[0][1]) / size[1]) * height - h / 2;
-        var color = getColor(level, p[i].properties.val, gradient);
-        var val = color.value;
-
-        if (filter && filter.indexOf && filter.indexOf(val) == -1) {
-
-          continue
-
-        }
-        
-        ctx.strokeStyle = ctx.fillStyle =
-          'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
-        ctx.beginPath();
-        ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
-
-      }
-
-    } else {
-
-      var d = isosurface.features;
-
-      for (var i = 0, len = d.length; i < len; i++) {
-
-        var val = d[i].properties.val;
-
-        if (filter && filter.indexOf && filter.indexOf(val) == -1) {
-
-          continue
-
-        }
-
-        var c = d[i].geometry.coordinates;
-
-        ctx.strokeStyle = ctx.fillStyle = d[i].properties.color;
-        ctx.beginPath();
-
-        for (var j = 0, jLen = c.length; j < jLen; j++) {
-
-          for (var n = 0, cLen = c[j].length; n < cLen; n++) {
-
-            var x = ((c[j][n][0] - ex[0][0]) / size[0]) * width;
-            var y = ((c[j][n][1] - ex[0][1]) / size[1]) * height;
-
-            ctx[n ? 'lineTo' : 'moveTo'](x, y);
-
-          }
-
-        }
-
-        ctx.fill('evenodd');
-
-      }
-
-    }
-    
-    return canvas
-    
-  }
-
-  /**
    * 绘制等值线
    * @author kongkongbuding
    * @since 2019.08.08
-   * @param {isoimage option} opt
-   * @param {线数据} lines
-   * @param {图片配置 width: 图片宽度, filter 过滤筛选} config
+   * @param {Object} opt isoimage option
+   * @param {Array} lines 线数据
+   * @param {Object} config 图片配置 width: 图片宽度, filter 过滤筛选
    */
 
   function getIsoline(opt, lines, config) {
@@ -1637,11 +2045,399 @@
   }
 
   /**
+   * 绘制等值面
+   * @author kongkongbuding
+   * @since 2019.08.08
+   * @param {Object} opt isoimage option
+   * @param {Object} pointGrid 网格
+   * @param {Object} isosurface
+   * @param {Object} config 图片配置 width: 图片宽度 opacity: 透明度 gradient 是否渐变, filter 过滤筛选 
+   */
+
+  function isosurfaceNormal(opt, pointGrid, isosurface, config) {
+
+    config = config || {};
+
+    var gradient = config.gradient == void 0 ? true : config.gradient;
+    var size = opt.size;
+    var cellWidth = opt.cellWidth;
+    var level = opt.level;
+    var ex = opt.ex;
+    var filter = config.filter;
+    var width = config.width || 1000;
+    var height = Math.abs((width / size[0]) * size[1]);
+    var canvas = document.createElement('canvas');
+
+    canvas.width = width;
+    canvas.height = height;
+
+    var ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, width, height);
+
+    if ( gradient ) {
+
+      console.log(1);
+
+      var p = pointGrid.features;
+      var cellx = size[0] / cellWidth > 1 ? p[Math.abs(Math.ceil(size[1] / cellWidth)) + 1].geometry.coordinates[0] - p[0].geometry.coordinates[0] : cellWidth;
+      var celly = size[1] / cellWidth > 1 ? p[1].geometry.coordinates[1] - p[0].geometry.coordinates[1] : cellWidth;
+      var w = Math.abs((cellx / size[0]) * width);
+      var h = Math.abs((celly / size[1]) * height);
+
+      for (var i = 0, len = p.length; i < len; i++) {
+
+        var item = p[i].geometry.coordinates;
+        var x = ((item[0] - ex[0][0]) / size[0]) * width - w / 2;
+        var y = ((item[1] - ex[0][1]) / size[1]) * height - h / 2;
+        var color = getColor(level, p[i].properties.val, gradient);
+        var val = color.value;
+
+        if (filter && filter.indexOf && filter.indexOf(val) == -1) {
+
+          continue
+
+        }
+        
+        console.log(color);
+
+        ctx.strokeStyle = ctx.fillStyle =
+          'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + color.a + ')';
+        ctx.beginPath();
+        ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
+
+      }
+
+    } else {
+
+      var d = isosurface.features;
+
+      for (var i = 0, len = d.length; i < len; i++) {
+
+        var val = d[i].properties.val;
+
+        if (filter && filter.indexOf && filter.indexOf(val) == -1) {
+
+          continue
+
+        }
+
+        var c = d[i].geometry.coordinates;
+
+        ctx.strokeStyle = ctx.fillStyle = d[i].properties.color;
+
+        ctx.beginPath();
+
+        for (var j = 0, jLen = c.length; j < jLen; j++) {
+
+          for (var n = 0, cLen = c[j].length; n < cLen; n++) {
+
+            var x = ((c[j][n][0] - ex[0][0]) / size[0]) * width;
+            var y = ((c[j][n][1] - ex[0][1]) / size[1]) * height;
+
+            ctx[n ? 'lineTo' : 'moveTo'](x, y);
+
+          }
+
+        }
+
+        ctx.fill('evenodd');
+
+      }
+
+    }
+    
+    return canvas
+    
+  }
+
+  /**
+   * 绘制等值面
+   * @author kongkongbuding
+   * @since 2019.08.08
+   * @param {Object} opt isoimage option
+   * @param {Object} pointGrid 网格
+   * @param {Object} isosurface
+   * @param {Object} config 图片配置 width: 图片宽度 opacity: 透明度 gradient 是否渐变, filter 过滤筛选 
+   */
+
+  function getIsosurface(opt, pointGrid, isosurface, config) {
+
+    config = config || {};
+
+    var gradient = config.gradient == void 0 ? true : config.gradient;
+    var size = opt.size;
+    var cellWidth = opt.cellWidth;
+    var level = opt.level;
+    var ex = opt.ex;
+    var filter = config.filter;
+    var width = config.width || 1000;
+    var height = Math.abs((width / size[0]) * size[1]);
+    var canvas = document.createElement('canvas');
+
+    canvas.width = width;
+    canvas.height = height;
+
+    return isosurfaceNormal.apply(this, arguments)
+    
+  }
+
+  /**
+   * 绘制等值面
+   * @author kongkongbuding
+   * @since 2020.05.15
+   */
+
+  var createShader = function(gl, sourceCode, type) {
+
+    var shader = gl.createShader(type);
+
+    gl.shaderSource(shader, sourceCode);
+    gl.compileShader(shader);
+
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+
+      var info = gl.getShaderInfoLog(shader);
+
+      throw new Error('着色器程序构建失败！ \n\n' + info)
+
+    }
+
+    return shader
+
+  };
+
+  var createShaderProgram = function(gl, VSHADER_SOURCE, FSHADER_SOURCE) {
+
+    var vertShader = createShader(gl, VSHADER_SOURCE, gl.VERTEX_SHADER);
+    var fragShader = createShader(gl, FSHADER_SOURCE, gl.FRAGMENT_SHADER);
+    
+    var shaderProgram = gl.createProgram();
+
+    gl.attachShader(shaderProgram, vertShader);
+    gl.attachShader(shaderProgram, fragShader);
+    gl.linkProgram(shaderProgram);
+    gl.useProgram(shaderProgram);
+
+    return shaderProgram
+
+  };
+
+  var createVertexBuffer = function(gl, data) {
+
+    var buffer = gl.createBuffer();
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+    var float32Data = new Float32Array(data);
+
+    gl.bufferData(gl.ARRAY_BUFFER, float32Data, gl.STATIC_DRAW);
+
+    return buffer
+
+  };
+
+  function IsosurfaceWebgl(extent, grid, level) {
+
+    var canvas = document.createElement('canvas');
+    var gl = canvas.getContext('webgl');
+
+    if (!gl) {
+
+      console.log('未发现 webgl !');
+
+      return false
+
+    }
+
+    this.canvas = canvas;
+    this.gl = gl;
+    
+    this.extent = extent;
+    this.grid = grid;
+    this.level = level;
+
+    this.setup(gl);
+
+  }
+
+  IsosurfaceWebgl.prototype = {
+    /** */
+    state: null,
+    /** */
+    canvas: null,
+    /** */
+    gl: null,
+    /** */
+    extent: [0, 0, 1, 1],
+    /** */
+    grid: null,
+    /** */
+    level: null,
+    /** */
+    program: null,
+    /** */
+    indices: [],
+    /** */
+    a_Position: null,
+    a_Color: null,
+    a_indices: null,
+    /** */
+    u_Scale: null,
+    u_Offset: null,
+    /** */
+    constructor: IsosurfaceWebgl,
+    /** */
+    setup: function(gl) {
+      
+      this.initShaders(gl);
+
+      this.initData(gl);
+
+    },
+    /** */
+    initShaders: function(gl) {
+
+      var VSHADER_SOURCE =
+        `
+        attribute vec2 a_Position;
+        attribute vec4 a_Color;
+
+        uniform float u_Scale;
+        attribute vec2 u_Offset;
+        
+        varying vec4 aColor;
+
+        void main() {
+          
+          aColor = a_Color;
+
+          gl_Position = vec4((a_Position + u_Offset) * u_Scale, 0.0, 1.0);
+
+        }
+      `;
+
+      var FSHADER_SOURCE =
+        `
+        precision highp float;
+
+        varying vec4 aColor;
+
+        void main() {
+
+          gl_FragColor = aColor;
+
+        }
+      `;
+
+      this.program = createShaderProgram(gl, VSHADER_SOURCE, FSHADER_SOURCE);
+
+      this.u_Scale = gl.getUniformLocation(this.program, 'u_Scale');
+      this.u_Offset = gl.getUniformLocation(this.program, 'u_Offset');
+
+    },
+    /** */
+    initData: function(gl) {
+
+      var extent = this.extent;
+      var grid = this.grid;
+      var level = this.level;
+      var col = 1;
+      var row = 1;
+      var features = grid.features;
+      var len = features.length;
+      var lng = features[0].geometry.coordinates[0];
+      var size = [extent[1][0] - extent[0][0], extent[1][1] - extent[0][1]];
+      
+      for (var i = 1; i < len; i++) {
+
+        if (features[i].geometry.coordinates[0] != lng) break
+        
+        col++;
+
+      }
+
+      row = parseInt(len / col);
+
+      var num = (col - 1) * (row - 1) * 2;
+
+      var vertices = new Float32Array(len * 2);
+      var colors = new Float32Array(len * 4);
+      var indices = new Uint16Array(num * 3);
+
+      for (var i = 0; i < len; i++) {
+
+        var coordinates = features[i].geometry.coordinates;
+        var val = features[i].properties.val;
+        var color = getColor(level, val, 1);
+
+        vertices.set([
+          ((coordinates[0] - extent[0][0]) / size[0]) * 2 - 1,
+          ((coordinates[1] - extent[0][1]) / size[1]) * 2 - 1
+        ], i * 2);
+
+        colors.set([
+          color.r / 255,
+          color.g / 255,
+          color.b / 255,
+          color.a
+        ], i * 3);
+
+      }
+
+      for (var i = 0; i < col - 1; i++) {
+
+        for (var j = 9; j < row - 1; j++) {
+
+          var ij = (i * (row - 1) + j) * 6;
+          var a = i * col + j;
+          var b = a + col;
+          var c = a + 1;
+          var d = b + 1;
+
+          indices.set([
+            a, c, d,
+            a, d, b
+          ], ij);
+
+        }
+
+      }
+      
+      this.a_Position = createVertexBuffer(gl, vertices);
+      this.a_Color = createVertexBuffer(gl, colors);
+
+      var indicesBufferObject = gl.createBuffer();
+
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBufferObject );
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+
+      this.indices = indices;
+      this.a_indices = indicesBufferObject;
+
+    },
+    render: function() {
+      
+      console.log(this.gl);
+      var gl = this.gl;
+
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.a_indices );
+      gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_SHORT, 0);
+
+      return this.canvas
+
+    }
+  };
+
+  /**
    * 图片叠加 透明度处理
    * @author kongkongbuding
    * @since 2019.08.08
-   * @param {canvas数组} cavs
-   * @param {opacity: 透明度} config
+   * @param {Array} cavs canvas数组
+   * @param {Object} config {opacity: 透明度}
    */
 
   function mix(cavs, option, config) {
@@ -1728,6 +2524,86 @@
     }
     
     return canvas
+    
+  }
+
+  /**
+   * @author kongkongbuding
+   * @since 2019.08.08
+   * @param {Array} isoimages isoimage 对象数组
+   * @param {Object} opt 配置项
+   * @param {Function} callBack 回调
+   */
+
+  function merge(isoimages, opt, callBack) {
+    
+    var imgs = isArray(isoimages) ? isoimages : [];
+
+    var option = Object.assign({}, {
+
+      width: 800,
+      height: 600,
+      child: []
+
+    }, opt);
+
+    if (!callBack || !imgs.length || !option.child.length) {
+
+      return false
+
+    }
+
+    var c = option.child;
+    var initInd = 0;
+    var w = option.width;
+    var h = option.height;
+    var canvas = document.createElement('canvas');
+
+    canvas.width = w;
+    canvas.height = h;
+
+    var ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, w, h);
+
+    for (var i = 0, len = c.length; i < len; i++) {
+
+      var t = c[i];
+      var v = imgs[t.target];
+
+      if (!v) {
+
+        continue
+
+      }
+
+      initInd++;
+
+      v[t.type] && v.initReady(function(that, t) {
+
+        var img = that[t.type](t.config, 1);
+        var s = t.scale || 1;
+        
+        initInd--;
+        
+        var pattern = ctx.createPattern(img, 'no-repeat');
+
+        ctx.fillStyle = pattern;
+        ctx.save();
+        ctx.translate(t.x, t.y);
+        ctx.scale(s, s);
+        ctx.fillRect(0, 0, img.width, img.height);
+        ctx.restore();
+        
+        if ( !initInd ) {
+
+          return callBack(canvas)
+          
+        }
+
+      }, t);
+
+    }
     
   }
 
@@ -2023,92 +2899,13 @@
       level[i].r = parseInt(color.substr(1, 2), 16);
       level[i].g = parseInt(color.substr(3, 2), 16);
       level[i].b = parseInt(color.substr(5, 2), 16);
+      level[i].a = parseInt(color.substr(7, 2) || 'ff', 16) / 255;
 
     }
 
     return level
     
   };
-
-  /**
-   * @author kongkongbuding
-   * @since 2019.08.08
-   * @param {isoimage 对象数组} isoimages 
-   * @param {配置项} opt 
-   * @param {回调} callBack 
-   */
-
-  function merge(isoimages, opt, callBack) {
-    
-    var imgs = isArray(isoimages) ? isoimages : [];
-
-    var option = Object.assign({}, {
-
-      width: 800,
-      height: 600,
-      child: []
-
-    }, opt);
-
-    if (!callBack || !imgs.length || !option.child.length) {
-
-      return false
-
-    }
-
-    var c = option.child;
-    var initInd = 0;
-    var w = option.width;
-    var h = option.height;
-    var canvas = document.createElement('canvas');
-
-    canvas.width = w;
-    canvas.height = h;
-
-    var ctx = canvas.getContext('2d');
-
-    ctx.clearRect(0, 0, w, h);
-
-    for (var i = 0, len = c.length; i < len; i++) {
-
-      var t = c[i];
-      var v = imgs[t.target];
-
-      if (!v) {
-
-        continue
-
-      }
-
-      initInd++;
-
-      v[t.type] && v.initReady(function(that, t) {
-
-        var img = that[t.type](t.config, 1);
-        var s = t.scale || 1;
-        
-        initInd--;
-        
-        var pattern = ctx.createPattern(img, 'no-repeat');
-
-        ctx.fillStyle = pattern;
-        ctx.save();
-        ctx.translate(t.x, t.y);
-        ctx.scale(s, s);
-        ctx.fillRect(0, 0, img.width, img.height);
-        ctx.restore();
-        
-        if ( !initInd ) {
-
-          return callBack(canvas)
-          
-        }
-
-      }, t);
-
-    }
-    
-  }
 
   /**
    * Earth Radius used with the Harvesine formula and approximates using a spherical (non-ellipsoid) Earth.
@@ -2159,7 +2956,7 @@
   function feature(geometry, properties, options) {
       // Optional Parameters
       options = options || {};
-      if (!isObject(options)) throw new Error('options is invalid');
+      if (!isObject$1(options)) throw new Error('options is invalid');
       var bbox = options.bbox;
       var id = options.id;
 
@@ -2259,7 +3056,7 @@
   function featureCollection(features, options) {
       // Optional Parameters
       options = options || {};
-      if (!isObject(options)) throw new Error('options is invalid');
+      if (!isObject$1(options)) throw new Error('options is invalid');
       var bbox = options.bbox;
       var id = options.id;
 
@@ -2361,7 +3158,7 @@
    * turf.isObject('foo')
    * //=false
    */
-  function isObject(input) {
+  function isObject$1(input) {
       return (!!input) && (input.constructor === Object);
   }
 
@@ -2788,7 +3585,7 @@
       // Optional parameters
       options = options || {};
       var ignoreEndVertices = options.ignoreEndVertices;
-      if (!isObject(options)) throw new Error('invalid options');
+      if (!isObject$1(options)) throw new Error('invalid options');
 
       // Validate input
       if (!pt) throw new Error('pt is required');
@@ -3206,7 +4003,7 @@
   function distance(from, to, options) {
       // Optional parameters
       options = options || {};
-      if (!isObject(options)) throw new Error('options is invalid');
+      if (!isObject$1(options)) throw new Error('options is invalid');
       var units = options.units;
 
       var coordinates1 = getCoord(from);
@@ -3246,7 +4043,7 @@
   function pointGrid(bbox, cellSide, options) {
       // Optional parameters
       options = options || {};
-      if (!isObject(options)) throw new Error('options is invalid');
+      if (!isObject$1(options)) throw new Error('options is invalid');
       // var units = options.units;
       var mask = options.mask;
       var properties = options.properties;
@@ -3665,7 +4462,7 @@
   function gridToMatrix(grid, options) {
       // Optional parameters
       options = options || {};
-      if (!isObject(options)) throw new Error('options is invalid');
+      if (!isObject$1(options)) throw new Error('options is invalid');
       var zProperty = options.zProperty || 'elevation';
       var flip = options.flip;
       var flags = options.flags;
@@ -3763,7 +4560,7 @@
   function isolines(pointGrid, breaks, options) {
       // Optional parameters
       options = options || {};
-      if (!isObject(options)) throw new Error('options is invalid');
+      if (!isObject$1(options)) throw new Error('options is invalid');
       var zProperty = options.zProperty || 'elevation';
       var commonProperties = options.commonProperties || {};
       var breaksProperties = options.breaksProperties || [];
@@ -3772,7 +4569,7 @@
       collectionOf(pointGrid, 'Point', 'Input must contain Points');
       if (!breaks) throw new Error('breaks is required');
       if (!Array.isArray(breaks)) throw new Error('breaks must be an Array');
-      if (!isObject(commonProperties)) throw new Error('commonProperties must be an Object');
+      if (!isObject$1(commonProperties)) throw new Error('commonProperties must be an Object');
       if (!Array.isArray(breaksProperties)) throw new Error('breaksProperties must be an Array');
 
       // Isoline methods
@@ -3884,7 +4681,7 @@
      * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
      * SOFTWARE.
      */
-  var Spline = function (options) {
+  var Spline$1 = function (options) {
       this.points = options.points || [];
       this.duration = options.duration || 10000;
       this.sharpness = options.sharpness || 0.85;
@@ -3928,7 +4725,7 @@
     /*
       Caches an array of equidistant (more or less) points on the curve.
     */
-  Spline.prototype.cacheSteps = function (mindist) {
+  Spline$1.prototype.cacheSteps = function (mindist) {
       var steps = [];
       var laststep = this.pos(0);
       steps.push(0);
@@ -3946,7 +4743,7 @@
     /*
       returns angle and speed in the given point in the curve
     */
-  Spline.prototype.vector = function (t) {
+  Spline$1.prototype.vector = function (t) {
       var p1 = this.pos(t + 10);
       var p2 = this.pos(t - 10);
       return {
@@ -3962,7 +4759,7 @@
 
       For constant speed, use Spline.steps[i];
     */
-  Spline.prototype.pos = function (time) {
+  Spline$1.prototype.pos = function (time) {
 
       function bezier(t, p1, c1, c2, p2) {
           var B = function (t) {
@@ -4021,7 +4818,7 @@
   function bezier(line, options) {
       // Optional params
       options = options || {};
-      if (!isObject(options)) throw new Error('options is invalid');
+      if (!isObject$1(options)) throw new Error('options is invalid');
       var resolution = options.resolution || 10000;
       var sharpness = options.sharpness || 0.85;
 
@@ -4031,7 +4828,7 @@
       if (!isNumber(sharpness)) throw new Error('sharpness must be an number');
 
       var coords = [];
-      var spline = new Spline({
+      var spline = new Spline$1({
           points: getGeom(line).coordinates.map(function (pt) {
               return {x: pt[0], y: pt[1]};
           }),
@@ -4049,433 +4846,6 @@
       return lineString(coords, line.properties);
   }
 
-  var Vector3 = function(a, b, c) {
-
-    this.x = a || 0;
-    this.y = b || 0;
-    this.z = c || 0;
-
-  };
-
-  Vector3.prototype = {
-    constructor: Vector3,
-    add: function(a, b) {
-
-      if (void 0 !== b) {
-
-        return console.warn("DEPRECATED: Vector3's .add() now only accepts one argument. Use .addVectors( a, b ) instead."), this.addVectors(a, b)
-
-      }
-
-      this.x += a.x;
-      this.y += a.y;
-      this.z += a.z;
-
-      return this
-
-    },
-    subVectors: function(a, b) {
-
-      this.x = a.x - b.x;
-      this.y = a.y - b.y;
-      this.z = a.z - b.z;
-
-      return this
-
-    },
-    distanceToSquared: function(a) {
-
-      var b = this.x - a.x;
-      var c = this.y - a.y;
-      var a = this.z - a.z;
-
-      return b * b + c * c + a * a
-
-    }
-  };
-
-  var CatmullRomCurve3 = (function() {
-
-    var Curve = function() {};
-
-    Curve.prototype = {
-      getPoint: function() {
-
-        console.log("Warning, getPoint() not implemented!");
-
-        return null
-
-      },
-      getPointAt: function(a) {
-
-        a = this.getUtoTmapping(a);
-
-        return this.getPoint(a)
-
-      },
-      getPoints: function(a) {
-
-        a || (a = 5);
-        var b;
-        var c = [];
-
-        for (b = 0; b <= a; b++) {
-
-          c.push(this.getPoint(b / a));
-
-        }
-
-        return c
-
-      },
-      getSpacedPoints: function (a) {
-
-        a || (a = 5);
-
-        var b;
-        var c = [];
-
-        for (b = 0; b <= a; b++) {
-          
-          c.push(this.getPointAt(b / a));
-
-        }
-
-        return c
-
-      },
-      getLength: function() {
-
-        var a = this.getLengths();
-
-        return a[a.length - 1]
-
-      },
-      getLengths: function(a) {
-
-        a || (a = this.__arcLengthDivisions ? this.__arcLengthDivisions : 200);
-
-        if ( this.cacheArcLengths && this.cacheArcLengths.length == a + 1 && !this.needsUpdate ) {
-
-          return this.cacheArcLengths
-
-        }
-
-        this.needsUpdate = !1;
-
-        var b = [];
-        var c;
-        var d = this.getPoint(0);
-        var e;
-        var f = 0;
-
-        b.push(0);
-
-        for (e = 1; e <= a; e++) {
-
-          c = this.getPoint(e / a);
-          f += c.distanceTo(d), b.push(f);
-          d = c;
-
-        }
-
-        return this.cacheArcLengths = b
-
-      },
-      updateArcLengths: function() {
-
-        this.needsUpdate = !0;
-
-        this.getLengths();
-
-      },
-      getUtoTmapping: function (a, b) {
-
-        var c = this.getLengths();
-        var d = 0;
-        var e = c.length;
-        var f;
-
-        f = b ? b : a * c[e - 1];
-
-        for (var h = 0, g = e - 1, i; h <= g;) {
-
-          if ( d = Math.floor(h + (g - h) / 2), i = c[d] - f, 0 > i ) {
-
-            h = d + 1;
-
-          } else if ( 0 < i ) {
-            
-            g = d - 1;
-
-          } else {
-            
-            g = d;
-
-            break
-
-          }
-
-        }
-
-        d = g;
-
-        if ( c[d] == f ) {
-
-          return d / (e - 1)
-
-        }
-
-        h = c[d];
-
-        return c = (d + (f - h) / (c[d + 1] - h)) / (e - 1)
-
-      },
-      getTangent: function(a) {
-
-        var b = a - 1E-4;
-        var a = a + 1E-4;
-
-        0 > b && (b = 0);
-        1 < a && (a = 1);
-
-        b = this.getPoint(b);
-
-        return this.getPoint(a).clone().sub(b).normalize()
-
-      },
-      getTangentAt: function(a) {
-
-        a = this.getUtoTmapping(a);
-
-        return this.getTangent(a)
-
-      }
-    };
-
-    Curve.Utils = {
-      tangentQuadraticBezier: function(a, b, c, d) {
-
-        return 2 * (1 - a) * (c - b) + 2 * a * (d - c)
-
-      },
-      tangentCubicBezier: function(a, b, c, d, e) {
-
-        return -3 * b * (1 - a) * (1 - a) + 3 * c * (1 - a) * (1 - a) - 6 * a * c * (1 - a) + 6 * a * d * (1 - a) - 3 * a * a * d + 3 * a * a * e
-
-      },
-      tangentSpline: function(a) {
-
-        return 6 * a * a - 6 * a + (3 * a * a - 4 * a + 1) + (-6 * a * a + 6 * a) + (3 * a * a - 2 * a)
-
-      },
-      interpolate: function(a, b, c, d, e) {
-
-        var a = 0.5 * (c - a);
-        var d = 0.5 * (d - b);
-        var f = e * e;
-
-        return (2 * b - 2 * c + a + d) * e * f + (-3 * b + 3 * c - 2 * a - d) * f + a * e + b
-
-      }
-    };
-
-    Curve.create = function(a, b) {
-
-      a.prototype = Object.create(Curve.prototype);
-      a.prototype.getPoint = b;
-
-      return a
-
-    };
-
-    var CubicPoly = function() {};
-
-    CubicPoly.prototype = {
-      init: function(x0, x1, t0, t1) {
-
-        this.c0 = x0;
-        this.c1 = t0;
-        this.c2 = -3 * x0 + 3 * x1 - 2 * t0 - t1;
-        this.c3 = 2 * x0 - 2 * x1 + t0 + t1;
-    
-      },
-      initNonuniformCatmullRom: function(x0, x1, x2, x3, dt0, dt1, dt2) {
-
-        var t1 = (x1 - x0) / dt0 - (x2 - x0) / (dt0 + dt1) + (x2 - x1) / dt1;
-        var t2 = (x2 - x1) / dt1 - (x3 - x1) / (dt1 + dt2) + (x3 - x2) / dt2;
-
-        t1 *= dt1;
-        t2 *= dt1;
-
-        this.init(x1, x2, t1, t2);
-    
-      },
-      initCatmullRom: function(x0, x1, x2, x3, tension) {
-
-        this.init(x1, x2, tension * (x2 - x0), tension * (x3 - x1));
-    
-      },
-      calc: function (t) {
-
-        var t2 = t * t;
-        var t3 = t2 * t;
-
-        return this.c0 + this.c1 * t + this.c2 * t2 + this.c3 * t3
-    
-      }
-    };
-
-    var tmp = new Vector3();
-    var px = new CubicPoly();
-    var py = new CubicPoly();
-    var pz = new CubicPoly();
-
-    return Curve.create(
-
-      function (p) {
-
-        this.points = p || [];
-        this.closed = false;
-
-      },
-
-      function (t) {
-
-        var points = this.points;
-        var point;
-        var intPoint;
-        var weight;
-        var l = points.length;
-
-        if (l < 2) {
-          
-          console.log('duh, you need at least 2 points');
-
-        }
-
-        point = (l - (this.closed ? 0 : 1)) * t;
-        intPoint = Math.floor(point);
-        weight = point - intPoint;
-
-        if ( this.closed ) {
-
-          intPoint += intPoint > 0 ? 0 : (Math.floor(Math.abs(intPoint) / points.length) + 1) * points.length;
-
-        } else if ( weight === 0 && intPoint === l - 1 ) {
-
-          intPoint = l - 2;
-          weight = 1;
-
-        }
-
-        var p0;
-        var p1;
-        var p2;
-        var p3;
-
-        if ( this.closed || intPoint > 0 ) {
-
-          p0 = points[(intPoint - 1) % l];
-
-        } else {
-
-          tmp.subVectors(points[0], points[1]).add(points[0]);
-          p0 = tmp;
-
-        }
-
-        p1 = points[intPoint % l];
-        p2 = points[(intPoint + 1) % l];
-
-        if ( this.closed || intPoint + 2 < l ) {
-
-          p3 = points[(intPoint + 2) % l];
-
-        } else {
-
-          tmp.subVectors(points[l - 1], points[l - 2]).add(points[l - 1]);
-          p3 = tmp;
-
-        }
-
-        if ( this.type === undefined || this.type === 'centripetal' || this.type === 'chordal' ) {
-
-          var pow = this.type === 'chordal' ? 0.5 : 0.25;
-          var dt0 = Math.pow(p0.distanceToSquared(p1), pow);
-          var dt1 = Math.pow(p1.distanceToSquared(p2), pow);
-          var dt2 = Math.pow(p2.distanceToSquared(p3), pow);
-
-          if (dt1 < 1e-4) {
-
-            dt1 = 1.0;
-
-          }
-
-          if (dt0 < 1e-4) {
-
-            dt0 = dt1;
-            
-          }
-
-          if (dt2 < 1e-4) {
-
-            dt2 = dt1;
-
-          }
-
-          px.initNonuniformCatmullRom(p0.x, p1.x, p2.x, p3.x, dt0, dt1, dt2);
-          py.initNonuniformCatmullRom(p0.y, p1.y, p2.y, p3.y, dt0, dt1, dt2);
-          pz.initNonuniformCatmullRom(p0.z, p1.z, p2.z, p3.z, dt0, dt1, dt2);
-
-        } else if ( this.type === 'catmullrom' ) {
-
-          var tension = this.tension !== undefined ? this.tension : 0.5;
-
-          px.initCatmullRom(p0.x, p1.x, p2.x, p3.x, tension);
-          py.initCatmullRom(p0.y, p1.y, p2.y, p3.y, tension);
-          pz.initCatmullRom(p0.z, p1.z, p2.z, p3.z, tension);
-
-        }
-
-        var v = new Vector3(
-          px.calc(weight),
-          py.calc(weight),
-          pz.calc(weight)
-        );
-
-        return v
-
-      }
-
-    )
-
-  })();
-
-  var Spline$1 = function(vec, NumPoints) {
-
-    var ver = new Array();
-
-    for ( var i = 0; i < vec.length; i++ ) {
-
-      ver[i] = new Vector3(vec[i][0], vec[i][1], 0);
-
-    }
-
-    var curve = new CatmullRomCurve3(ver);
-    var spline = curve.getPoints(NumPoints * ver.length);
-    var splinePoints = new Array();
-
-    for (var i = 0; i < spline.length; i++) {
-      
-      splinePoints.push([spline[i].x, spline[i].y]);
-
-    }
-
-    return splinePoints
-    
-  };
-
   /**
    * 等值图生成
    * @author kongkongbuding
@@ -4491,8 +4861,6 @@
   var min$2 = Math.min;
   var max$2 = Math.max;
   var abs$2 = Math.abs;
-  var round = Math.round;
-  var flot = 1000000;
   var defaultKeyConfig = {
     x: 'x',
     y: 'y',
@@ -4519,8 +4887,10 @@
 
     this.name = name;
 
+    // 初始化
     this.initialize(points, opt, callBack);
 
+    // 获取等值面
     this.getIsosurface = function(config, key) {
 
       if ( !this.alow() ) {
@@ -4547,6 +4917,7 @@
 
     };
     
+    // 获取等值线
     this.getIsoline = function(config, key) {
 
       if ( !this.alow() ) {
@@ -4573,6 +4944,7 @@
 
     };
 
+    // 获取等值面+等值线
     this.getIsoImage = function(config, key) {
       
       if ( !this.alow() ) {
@@ -4599,6 +4971,8 @@
       return cav.toDataURL(picture)
 
     };
+
+    // 获取图例
     this.getLegend = function(config, key) {
       
       var level = this.option.level || [];
@@ -4619,6 +4993,8 @@
       return legend.toDataURL('image/png')
 
     };
+
+    // 地图图层
     this.layer = function(map, config) {
 
       if ( !existLeaflet() ) {
@@ -4655,6 +5031,7 @@
 
     };
 
+    // 地图 获取等值面
     this.getLeafletIsosurface = function(layer, config) {
 
       if ( !existLeaflet() ) return
@@ -4663,6 +5040,8 @@
       var group = leafletImage(d, 'polygon', layer, config);
       return L.featureGroup(group)
     };
+
+    // 地图 获取等值线
     this.getLeafletIsoline = function(layer, config) {
       if ( !existLeaflet() ) {
 
@@ -4676,6 +5055,8 @@
       return L.featureGroup(group)
 
     };
+
+    // 地图 获取等值面+等值线
     this.getLeafletIsoImage = function(layer, config) {
 
       if ( !existLeaflet() ) {
@@ -4694,6 +5075,7 @@
 
     };
 
+    // 地图 获取图例
     this.getLeafletLegend = function(config) {
 
       if ( !existLeaflet() ) {
@@ -4727,7 +5109,16 @@
   }
 
   IsoImage.prototype = {
+    /**
+     * 
+     */
     constructor: IsoImage,
+    /**
+     * 初始化
+     * @param {*} points 
+     * @param {*} opt 
+     * @param {*} callBack 
+     */
     initialize: function(points, opt, callBack) {
 
       var ex = opt.extent;
@@ -4754,11 +5145,11 @@
         max$2(ex[0][1], ex[1][1])
       ];
       var size = [ex[1][0] - ex[0][0], ex[1][1] - ex[0][1]];
-      var cellWidth = opt.cellWidth || round((abs$2(size[0]) / 200) * flot) / flot;
+      var cellWidth = opt.cellWidth || signFigures(Math.sqrt(abs$2(size[0] * size[1] / 2000)));
 
       if ( isIE ) {
 
-        cellWidth *= 3;
+        cellWidth *= 2;
 
       }
 
@@ -4846,6 +5237,9 @@
       callBack && this.initReady(callBack);
 
     },
+    /**
+     * 计算网格值
+     */
     calcGridValue: function() {
 
       var opt = this.option;
@@ -4934,6 +5328,9 @@
       }
 
     },
+    /**
+     * 计算等值线 面
+     */
     calcIso: function() {
 
       var opt = this.option;
@@ -5013,9 +5410,20 @@
         }
 
       }
-
+      
       this.isoline = lines;
-      this.isosurface = calcBlock(lines, opt.extent, pointGrid, level);
+
+      try {
+
+        this.isosurface = calcBlock(lines, opt.extent, pointGrid, level);
+
+      } catch (err) {
+
+        console.log(err);
+
+      }
+
+      this.isosurfaceWebgl = new IsosurfaceWebgl(opt.ex, pointGrid, level);
 
       if (opt.smooth) {
             
@@ -5029,6 +5437,10 @@
       this.isoLinesState = true;
 
     },
+    /**
+     * 平滑
+     * @param {*} GeoJson 
+     */
     smooth: function(GeoJson) {
 
       var lFeatures = GeoJson.features;
@@ -5041,7 +5453,7 @@
         for (var j = 0; j < coords.length; j++) {
           
           var coord = coords[j];
-          var curved = Spline$1(coord, 5);
+          var curved = Spline(coord, 5);
           lCoords.push(curved);
 
         }
@@ -5053,6 +5465,10 @@
       return GeoJson
 
     },
+    /**
+     * 平滑
+     * @param {*} GeoJson 
+     */
     smooth2: function(GeoJson) {
 
       var lFeatures = GeoJson.features;
@@ -5085,11 +5501,17 @@
       return GeoJson
 
     },
+    /**
+     * 计算完成检测
+     */
     alow: function() {
 
       return this.pointGrid && this.isoline
 
     },
+    /**
+     * 准备好了吗？
+     */
     initReady: function(callBack, config) {
 
       var timer = null;
@@ -5108,6 +5530,9 @@
       }, 10);
 
     },
+    /**
+     * 移除
+     */
     remove: function() {
 
       for (var p in this) {

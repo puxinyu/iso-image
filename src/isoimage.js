@@ -7,22 +7,23 @@
 import idw from './calc/idw'
 import kriging from './calc/kriging'
 import calcBlock from './calc/calcBlock'
+import Spline from './calc/Spline'
 import getLegend from './layer/legend'
-import getIsosurface from './layer/isosurface'
 import getIsoline from './layer/isoline'
+import getIsosurface from './layer/isosurface'
+import IsosurfaceWebgl from './util/isosurfaceWebgl'
 import mix from './layer/mix'
+import merge from './layer/merge'
 import fmtGeoJson, { fmtLatLng } from './util/fmtGeoJson'
 import { IsoLayer, ClipLayer } from './util/leafletLayer'
-import { isArray, getExtent } from './util/common'
+import { isArray, getExtent, signFigures } from './util/common'
 import leafletLegend from './util/leafletLegend'
 import leafletImage from './util/leafletImage'
 import fmtLevel from './util/fmtLevel'
-import merge from './layer/merge'
 import turfPointGrid from '@turf/point-grid'
 import turfIsolines from '@turf/isolines'
 import bezierSpline from '@turf/bezier-spline'
 import { lineString } from '@turf/helpers'
-import Spline from './calc/Spline'
 
 var name = 'IsoImage'
 var picture = 'image/png'
@@ -319,11 +320,11 @@ IsoImage.prototype = {
       max(ex[0][1], ex[1][1])
     ]
     var size = [ex[1][0] - ex[0][0], ex[1][1] - ex[0][1]]
-    var cellWidth = opt.cellWidth || round((abs(size[0]) / 200) * flot) / flot
+    var cellWidth = opt.cellWidth || signFigures(Math.sqrt(abs(size[0] * size[1] / 2000)))
 
     if ( isIE ) {
 
-      cellWidth *= 3
+      cellWidth *= 2
 
     }
 
@@ -584,9 +585,20 @@ IsoImage.prototype = {
       }
 
     }
-
+    
     this.isoline = lines
-    this.isosurface = calcBlock(lines, opt.extent, pointGrid, level)
+
+    try {
+
+      this.isosurface = calcBlock(lines, opt.extent, pointGrid, level)
+
+    } catch (err) {
+
+      console.log(err)
+
+    }
+
+    this.isosurfaceWebgl = new IsosurfaceWebgl(opt.ex, pointGrid, level)
 
     if (opt.smooth) {
           

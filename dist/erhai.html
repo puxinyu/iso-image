@@ -38,85 +38,108 @@
           var data = []
           var vs = {}
 
-          for (var i = 0, len = dep.length; i < len; i++) {
+          ajax('http://172.16.1.130:50034/ECJson/BaseLine/chla/2018/20181007.json', function(vv) {
 
-            var it = dep[i]
-            vs[it.i + '-' + it.j] = +it.v 
+            var list = vv[0].data
+            var k = 1
 
-          }
+            for (var i = 0, len = list.length; i < len; i++) {
 
-          for (var p in grid) {
+              var it = list[i]
 
-            var g = grid[p].split(',')
-            var x = (+g[0] + +g[2] + +g[4] + +g[6]) / 4
-            var y = (+g[1] + +g[3] + +g[5] + +g[7]) / 4
-            var v = vs[p]
+              vs[it.ij] = it.v.split(',')
 
-            if (v == void 0) continue
-
-            data.push({
-              x: x, y: y, v: v
-            })
-
-          }
-          
-          var isoImage = new IsoImage(data, {
-            type: 'idw', // kriging idw
-            worker: './worker',
-            extent: [[100.09, 26], [100.29, 25.6]],
-            clip: clip,
-            level: [
-              { value: 0, color: '#4472c4' },
-              { value: 0.1, color: '#3c7aca' },
-              { value: 0.2, color: '#3183d0' },
-              { value: 0.3, color: '#2390da' },
-              { value: 0.4, color: '#179ce1' },
-              { value: 0.5, color: '#09a8eb' },
-              { value: 0.6, color: '#01b2e9' },
-              { value: 0.7, color: '#03c6ab' },
-              { value: 0.8, color: '#08e356' },
-              { value: 0.9, color: '#0bfd06' },
-              { value: 1, color: '#33ff00' },
-              { value: 1.1, color: '#72ff00' },
-              { value: 1.2, color: '#b8ff00' },
-              { value: 1.3, color: '#e4fd00' },
-              { value: 1.4, color: '#edc600' },
-              { value: 1.5, color: '#fb8000' },
-              { value: 1.6, color: '#ff6600' },
-              { value: 1.7, color: '#ff6201' },
-              { value: 1.8, color: '#ff5d05' },
-              { value: 1.9, color: '#ff5707' },
-              { value: 2, color: '#ff500b' },
-              { value: 2.1, color: '#ff480e' },
-              { value: 2.2, color: '#ff4212' },
-              { value: 2.3, color: '#ff3c15' },
-              { value: 2.4, color: '#ff3518' },
-              { value: 2.5, color: '#ff2f1a' },
-              { value: 2.6, color: '#ff2c1c' }
-            ],
-            cellWidth: 0.005,
-            keyConfig: {
-              x: 'x',
-              y: 'y',
-              v: 'v',
-              clipX: '0',
-              clipY: '1'
             }
-          })
 
-          isoImage.initReady(function() {
+            for (var p in grid) {
 
-            var imgUrl = isoImage.getIsosurface({
-              width: 400,
-              opacity: 1,
-              gradient: false
+              var g = grid[p].split(',')
+              var x = (+g[0] + +g[2] + +g[4] + +g[6]) / 4
+              var y = (+g[1] + +g[3] + +g[5] + +g[7]) / 4
+              var v = +vs[p][k]
+
+              if (v == void 0) continue
+
+              data.push({
+                x: x, y: y, v: v
+              })
+
+            }
+
+            var colors = [
+              { value: 0, color: '#4472c4a0' },
+              { value: 0.05, color: '#3c7acaa0' },
+              { value: 0.1, color: '#3183d0a0' },
+              { value: 0.15, color: '#2390daa0' },
+              { value: 0.2, color: '#179ce1a0' },
+              { value: 0.25, color: '#09a8eba0' },
+              { value: 0.3, color: '#01b2e9a0' },
+              { value: 0.35, color: '#03c6aba0' },
+              { value: 0.4, color: '#08e356a0' },
+              { value: 0.45, color: '#0bfd06a0' },
+              { value: 0.5, color: '#33ff0030' },
+              { value: 0.55, color: '#72ff0030' },
+              { value: 0.6, color: '#b8ff0030' },
+              { value: 0.65, color: '#e4fd0030' },
+              { value: 0.7, color: '#edc60030' },
+              { value: 0.75, color: '#fb800030' },
+              { value: 0.8, color: '#ff660030' },
+              { value: 0.85, color: '#ff620130' },
+              { value: 0.9, color: '#ff5d05a0' },
+              { value: 0.95, color: '#ff5707a0' },
+              { value: 1, color: '#ff500ba0' },
+              { value: 1.05, color: '#ff480ea0' },
+              { value: 1.1, color: '#ff4212a0' },
+              { value: 1.15, color: '#ff3c15ff' },
+              { value: 1.2, color: '#ff3518ff' },
+              { value: 1.25, color: '#ff2f1aff' },
+              { value: 1.3, color: '#ff2c1cff' }
+            ]
+
+            for (var i = 0, len = colors.length; i < len; i++) {
+
+              colors[i].value = Math.floor(i * 152) / 100
+
+            }
+
+            var isoImage = new IsoImage(data, {
+              type: 'idw', // kriging idw
+              // worker: './worker',
+              extent: [[100.09, 25.97], [100.29, 25.6]],
+              // clip: clip,
+              level: colors,
+              // cellWidth: 0.005,
+              keyConfig: {
+                x: 'x',
+                y: 'y',
+                v: 'v',
+                clipX: '0',
+                clipY: '1'
+              }
             })
 
-            var img = new Image()
+            isoImage.initReady(function() {
 
-            img.src = imgUrl
-            document.body.appendChild(img)
-            
+              // getIsosurface getIsoline getIsoImage
+
+              var imgUrl = isoImage.getIsosurface({
+                width: 400,
+                opacity: 1,
+                gradient: 0
+              })
+
+              var img = new Image()
+
+              img.src = imgUrl
+              document.body.appendChild(img)
+
+              console.log(isoImage)
+              var cc = isoImage.isosurfaceWebgl.render()
+
+              document.body.appendChild(cc)
+
+            })
+
           })
 
         })

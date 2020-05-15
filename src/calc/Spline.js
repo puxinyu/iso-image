@@ -9,13 +9,7 @@ var Vector3 = function(a, b, c) {
 
 Vector3.prototype = {
   constructor: Vector3,
-  add: function(a, b) {
-
-    if (void 0 !== b) {
-
-      return console.warn("DEPRECATED: Vector3's .add() now only accepts one argument. Use .addVectors( a, b ) instead."), this.addVectors(a, b)
-
-    }
+  add: function(a) {
 
     this.x += a.x
     this.y += a.y

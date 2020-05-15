@@ -1,7 +1,50 @@
 
-export var newSpace = function(d) {
+var O = Object.prototype.toString
 
-  return JSON.parse(JSON.stringify(d))
+export var isArray = function(v) {
+  
+  return O.call(v) === '[object Array]'
+  
+}
+
+export var isObject = function(v) {
+  
+  return O.call(v) === '[object Object]'
+  
+}
+
+export var newSpace = function(d, f) {
+
+  if (f) return JSON.parse(JSON.stringify(d))
+
+  if (isArray(d)) {
+
+    if (d.length == 0 || (d.length > 0 && !isArray(d[0]) && !isObject(d[0])))
+      return Object.assign([], d, [])
+
+    var vd = []
+
+    for (var i = 0, len = d.length; i < len; i++) {
+
+      vd.push(newSpace(d[i]))
+
+    }
+
+    return vd
+
+  }
+
+  if (isObject(d)) {
+
+    var nd = new Object()
+
+    for (var p in d) nd[p] = newSpace(d[p])
+
+    return nd
+
+  }
+
+  return d
 
 }
 
@@ -17,12 +60,15 @@ export var dist = function (a, b) {
 
 }
 
-var O = Object.prototype.toString
+export var signFigures = function(num, dec) {
 
-export var isArray = function(v) {
-  
-  return O.call(v) === '[object Array]'
-  
+  dec = dec == void 0 ? 1 : dec
+
+  var toExponential = (+num).toExponential(dec)
+  var max = Number(toExponential)
+
+  return max
+
 }
 
 export var getExtent = function(features) {
