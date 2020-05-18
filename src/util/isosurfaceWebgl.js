@@ -55,9 +55,32 @@ var createVertexBuffer = function(gl, data) {
 
 }
 
+var bindVertexBuffer = function(gl, name, size) {
+
+  try {
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this[name])
+
+    var a_buffer = gl.getAttribLocation(this.program, name)
+    
+    gl.vertexAttribPointer(a_buffer, size, gl.FLOAT, false, 0, 0)
+    gl.enableVertexAttribArray(a_buffer)
+
+  } catch (e) {
+
+    console.warn(e)
+
+  }
+
+}
+
 function IsosurfaceWebgl(extent, grid, level) {
 
   var canvas = document.createElement('canvas')
+
+  canvas.width = 1000
+  canvas.height = 1000
+
   var gl = canvas.getContext('webgl')
 
   if (!gl) {
@@ -74,6 +97,8 @@ function IsosurfaceWebgl(extent, grid, level) {
   this.extent = extent
   this.grid = grid
   this.level = level
+
+  this.size = [extent[1][0] - extent[0][0], extent[1][1] - extent[0][1]]
 
   this.setup(gl)
 
@@ -121,14 +146,15 @@ IsosurfaceWebgl.prototype = {
         attribute vec2 a_Position;
         attribute vec4 a_Color;
 
-        uniform float u_Scale;
-        attribute vec2 u_Offset;
+        uniform vec2 u_Scale;
+        uniform vec2 u_Offset;
         
         varying vec4 aColor;
 
         void main() {
           
           aColor = a_Color;
+          // aColor = vec4(a_Position, 0.0, 1.0);
 
           gl_Position = vec4((a_Position + u_Offset) * u_Scale, 0.0, 1.0);
 
@@ -159,14 +185,14 @@ IsosurfaceWebgl.prototype = {
 
     var extent = this.extent
     var grid = this.grid
-    var level = this.level
+    var level = JSON.parse(JSON.stringify(this.level))
+    var size = this.size
     var col = 1
     var row = 1
     var features = grid.features
     var len = features.length
     var lng = features[0].geometry.coordinates[0]
-    var size = [extent[1][0] - extent[0][0], extent[1][1] - extent[0][1]]
-    
+
     for (var i = 1; i < len; i++) {
 
       if (features[i].geometry.coordinates[0] != lng) break
@@ -191,7 +217,7 @@ IsosurfaceWebgl.prototype = {
 
       vertices.set([
         ((coordinates[0] - extent[0][0]) / size[0]) * 2 - 1,
-        ((coordinates[1] - extent[0][1]) / size[1]) * 2 - 1
+        1 - ((coordinates[1] - extent[0][1]) / size[1]) * 2
       ], i * 2)
 
       colors.set([
@@ -199,20 +225,20 @@ IsosurfaceWebgl.prototype = {
         color.g / 255,
         color.b / 255,
         color.a
-      ], i * 3)
+      ], i * 4)
 
     }
 
-    for (var i = 0; i < col - 1; i++) {
+    for (var i = 0; i < row - 1; i++) {
 
-      for (var j = 9; j < row - 1; j++) {
+      for (var j = 0; j < col - 1; j++) {
 
-        var ij = (i * (row - 1) + j) * 6
+        var ij = (i * (col - 1) + j) * 6
         var a = i * col + j
         var b = a + col
         var c = a + 1
         var d = b + 1
-
+        
         indices.set([
           a, c, d,
           a, d, b
@@ -221,7 +247,7 @@ IsosurfaceWebgl.prototype = {
       }
 
     }
-    
+
     this.a_Position = createVertexBuffer(gl, vertices)
     this.a_Color = createVertexBuffer(gl, colors)
 
@@ -234,10 +260,57 @@ IsosurfaceWebgl.prototype = {
     this.a_indices = indicesBufferObject
 
   },
-  render: function() {
-    
-    console.log(this.gl)
+  setFilter: function(filter) {
+
     var gl = this.gl
+    var level = JSON.parse(JSON.stringify(this.level))
+    var grid = this.grid
+    var features = grid.features
+    var len = features.length
+    var colors = new Float32Array(len * 4)
+
+    for (var i = 0; i < level.length; i++) {
+
+      if (filter.indexOf && filter.indexOf(level[i].value) == -1) level[i].a = 0
+
+    }
+
+    for (var i = 0; i < len; i++) {
+
+      var val = features[i].properties.val
+      var color = getColor(level, val, 1)
+
+      colors.set([
+        color.r / 255,
+        color.g / 255,
+        color.b / 255,
+        color.a
+      ], i * 4)
+
+    }
+
+    this.a_Color = createVertexBuffer(gl, colors)
+
+  },
+  render: function(options) {
+
+    var canvas = this.canvas
+    var size = this.size
+    var gl = this.gl
+
+    var width = options.width || 400
+    var height = Math.abs((width / size[0]) * size[1])
+
+    canvas.width = width
+    canvas.height = height
+
+    gl.viewport(0, 0, width, height)
+
+    gl.uniform2fv(this.u_Scale, [1, 1])
+    gl.uniform2fv(this.u_Offset, [0, 0])
+    
+    bindVertexBuffer.call(this, gl, 'a_Position', 2)
+    bindVertexBuffer.call(this, gl, 'a_Color', 4)
 
     gl.clearColor(0.0, 0.0, 0.0, 0.0)
     gl.clear(gl.COLOR_BUFFER_BIT)
@@ -245,7 +318,7 @@ IsosurfaceWebgl.prototype = {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.a_indices )
     gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_SHORT, 0)
 
-    return this.canvas
+    return canvas
 
   }
 }

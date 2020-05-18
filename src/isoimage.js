@@ -76,7 +76,8 @@ export default function IsoImage(points, opt, callBack) {
 
     var cav = mix(
       [
-        getIsosurface(this.option, this.pointGrid, this.isosurface, config)
+        // getIsosurface.call(this, this.option, this.pointGrid, this.isosurface, config)
+        getIsosurface.call(this, config)
       ],
       this.option,
       config
@@ -103,7 +104,7 @@ export default function IsoImage(points, opt, callBack) {
 
     var cav = mix(
       [
-        getIsoline(this.option, this.isoline, config)
+        getIsoline.call(this, config)
       ],
       this.option,
       config
@@ -130,8 +131,8 @@ export default function IsoImage(points, opt, callBack) {
 
     var cav = mix(
       [
-        getIsosurface(this.option, this.pointGrid, this.isosurface, config),
-        getIsoline(this.option, this.isoline, config)
+        getIsosurface.call(this, config),
+        getIsoline.call(this, config)
       ],
       this.option,
       config
@@ -212,8 +213,16 @@ export default function IsoImage(points, opt, callBack) {
     if ( !existLeaflet() ) return
 
     var d = this.fmtLatlngsIsosurface
+
+    // console.log(d)
+
+    // d.features = d.features.slice(34)
+    // d.features[0].geometry.coordinates = d.features[0].geometry.coordinates.slice(0, 1)
+
     var group = leafletImage(d, 'polygon', layer, config)
+
     return L.featureGroup(group)
+
   }
 
   // 地图 获取等值线
@@ -337,14 +346,21 @@ IsoImage.prototype = {
       pow: opt.pow || 3,
       model: opt.model || 'spherical', // gaussian|exponential|spherical
       clip: opt.clip,
-      fmtClip: opt.clip ? fmtLatLng(JSON.parse(JSON.stringify(opt.clip)), 2, key.clipX, key.clipY) : [],
+      fmtClip: opt.clip ? fmtLatLng(JSON.parse(JSON.stringify(opt.clip)), key.clipX, key.clipY) : [
+        [extent[1], extent[0]],
+        [extent[3], extent[0]],
+        [extent[3], extent[2]],
+        [extent[1], extent[2]],
+        [extent[1], extent[0]],
+      ],
       smooth: opt.smooth,
       ex: ex,
       extent: extent,
       size: size,
       cellWidth: cellWidth,
       level: level,
-      key: key
+      key: key,
+      webgl: opt.webgl == void 0 ? 1 : opt.webgl
 
     }
 
@@ -543,6 +559,8 @@ IsoImage.prototype = {
 
         }
 
+        if (opt.webgl) that.isosurfaceWebgl = new IsosurfaceWebgl(opt.ex, pointGrid, level)
+
         if (opt.smooth) {
           
           that.isoline = that.smooth(that.isoline)
@@ -598,7 +616,7 @@ IsoImage.prototype = {
 
     }
 
-    this.isosurfaceWebgl = new IsosurfaceWebgl(opt.ex, pointGrid, level)
+    if (opt.webgl) this.isosurfaceWebgl = new IsosurfaceWebgl(opt.ex, pointGrid, level)
 
     if (opt.smooth) {
           

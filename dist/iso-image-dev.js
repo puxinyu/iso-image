@@ -698,6 +698,12 @@
     
   };
 
+  var isNumber = function(v) {
+
+    return !isNaN(parseFloat(v)) && isFinite(v)
+
+  };
+
   var newSpace = function(d, f) {
 
     if (f) return JSON.parse(JSON.stringify(d))
@@ -1965,12 +1971,15 @@
    * @param {Object} config 图片配置 width: 图片宽度, filter 过滤筛选
    */
 
-  function getIsoline(opt, lines, config) {
+  function getIsoline(config) {
 
     config = config || {};
 
+    var opt = this.option;
+    var lines = this.isoline;
     var size = opt.size;
     var ex = opt.ex;
+    var text = opt.text;
     var width = config.width || 1000;
     var height = Math.abs((width / size[0]) * size[1]);
     var color = config.isolineColor || '#333';
@@ -2023,7 +2032,7 @@
           var dy = Math.round(y / 16);
           var k = dx + '-' + dy;
 
-          if ( !position[k] && !ft ) {
+          if (text && !position[k] && !ft ) {
 
             position[k] = 1;
             ft = 1;
@@ -2054,11 +2063,14 @@
    * @param {Object} config 图片配置 width: 图片宽度 opacity: 透明度 gradient 是否渐变, filter 过滤筛选 
    */
 
-  function isosurfaceNormal(opt, pointGrid, isosurface, config) {
+  function getIsosurface(config) {
 
     config = config || {};
 
-    var gradient = config.gradient == void 0 ? true : config.gradient;
+    var gradient = config.gradient == void 0 ? 1 : config.gradient;
+    var opt = this.option;
+    var pointGrid = this.pointGrid;
+    var isosurface = this.isosurface;
     var size = opt.size;
     var cellWidth = opt.cellWidth;
     var level = opt.level;
@@ -2066,6 +2078,15 @@
     var filter = config.filter;
     var width = config.width || 1000;
     var height = Math.abs((width / size[0]) * size[1]);
+
+    if (gradient && this.isosurfaceWebgl) {
+
+      if (filter) this.isosurfaceWebgl.setFilter(filter);
+   
+      return this.isosurfaceWebgl.render(config)
+
+    }
+    
     var canvas = document.createElement('canvas');
 
     canvas.width = width;
@@ -2076,8 +2097,6 @@
     ctx.clearRect(0, 0, width, height);
 
     if ( gradient ) {
-
-      console.log(1);
 
       var p = pointGrid.features;
       var cellx = size[0] / cellWidth > 1 ? p[Math.abs(Math.ceil(size[1] / cellWidth)) + 1].geometry.coordinates[0] - p[0].geometry.coordinates[0] : cellWidth;
@@ -2098,8 +2117,6 @@
           continue
 
         }
-        
-        console.log(color);
 
         ctx.strokeStyle = ctx.fillStyle =
           'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + color.a + ')';
@@ -2148,38 +2165,7 @@
     }
     
     return canvas
-    
-  }
 
-  /**
-   * 绘制等值面
-   * @author kongkongbuding
-   * @since 2019.08.08
-   * @param {Object} opt isoimage option
-   * @param {Object} pointGrid 网格
-   * @param {Object} isosurface
-   * @param {Object} config 图片配置 width: 图片宽度 opacity: 透明度 gradient 是否渐变, filter 过滤筛选 
-   */
-
-  function getIsosurface(opt, pointGrid, isosurface, config) {
-
-    config = config || {};
-
-    var gradient = config.gradient == void 0 ? true : config.gradient;
-    var size = opt.size;
-    var cellWidth = opt.cellWidth;
-    var level = opt.level;
-    var ex = opt.ex;
-    var filter = config.filter;
-    var width = config.width || 1000;
-    var height = Math.abs((width / size[0]) * size[1]);
-    var canvas = document.createElement('canvas');
-
-    canvas.width = width;
-    canvas.height = height;
-
-    return isosurfaceNormal.apply(this, arguments)
-    
   }
 
   /**
@@ -2237,9 +2223,32 @@
 
   };
 
+  var bindVertexBuffer = function(gl, name, size) {
+
+    try {
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, this[name]);
+
+      var a_buffer = gl.getAttribLocation(this.program, name);
+      
+      gl.vertexAttribPointer(a_buffer, size, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(a_buffer);
+
+    } catch (e) {
+
+      console.warn(e);
+
+    }
+
+  };
+
   function IsosurfaceWebgl(extent, grid, level) {
 
     var canvas = document.createElement('canvas');
+
+    canvas.width = 1000;
+    canvas.height = 1000;
+
     var gl = canvas.getContext('webgl');
 
     if (!gl) {
@@ -2256,6 +2265,8 @@
     this.extent = extent;
     this.grid = grid;
     this.level = level;
+
+    this.size = [extent[1][0] - extent[0][0], extent[1][1] - extent[0][1]];
 
     this.setup(gl);
 
@@ -2303,14 +2314,15 @@
         attribute vec2 a_Position;
         attribute vec4 a_Color;
 
-        uniform float u_Scale;
-        attribute vec2 u_Offset;
+        uniform vec2 u_Scale;
+        uniform vec2 u_Offset;
         
         varying vec4 aColor;
 
         void main() {
           
           aColor = a_Color;
+          // aColor = vec4(a_Position, 0.0, 1.0);
 
           gl_Position = vec4((a_Position + u_Offset) * u_Scale, 0.0, 1.0);
 
@@ -2341,14 +2353,14 @@
 
       var extent = this.extent;
       var grid = this.grid;
-      var level = this.level;
+      var level = JSON.parse(JSON.stringify(this.level));
+      var size = this.size;
       var col = 1;
       var row = 1;
       var features = grid.features;
       var len = features.length;
       var lng = features[0].geometry.coordinates[0];
-      var size = [extent[1][0] - extent[0][0], extent[1][1] - extent[0][1]];
-      
+
       for (var i = 1; i < len; i++) {
 
         if (features[i].geometry.coordinates[0] != lng) break
@@ -2373,7 +2385,7 @@
 
         vertices.set([
           ((coordinates[0] - extent[0][0]) / size[0]) * 2 - 1,
-          ((coordinates[1] - extent[0][1]) / size[1]) * 2 - 1
+          1 - ((coordinates[1] - extent[0][1]) / size[1]) * 2
         ], i * 2);
 
         colors.set([
@@ -2381,20 +2393,20 @@
           color.g / 255,
           color.b / 255,
           color.a
-        ], i * 3);
+        ], i * 4);
 
       }
 
-      for (var i = 0; i < col - 1; i++) {
+      for (var i = 0; i < row - 1; i++) {
 
-        for (var j = 9; j < row - 1; j++) {
+        for (var j = 0; j < col - 1; j++) {
 
-          var ij = (i * (row - 1) + j) * 6;
+          var ij = (i * (col - 1) + j) * 6;
           var a = i * col + j;
           var b = a + col;
           var c = a + 1;
           var d = b + 1;
-
+          
           indices.set([
             a, c, d,
             a, d, b
@@ -2403,7 +2415,7 @@
         }
 
       }
-      
+
       this.a_Position = createVertexBuffer(gl, vertices);
       this.a_Color = createVertexBuffer(gl, colors);
 
@@ -2416,10 +2428,57 @@
       this.a_indices = indicesBufferObject;
 
     },
-    render: function() {
-      
-      console.log(this.gl);
+    setFilter: function(filter) {
+
       var gl = this.gl;
+      var level = JSON.parse(JSON.stringify(this.level));
+      var grid = this.grid;
+      var features = grid.features;
+      var len = features.length;
+      var colors = new Float32Array(len * 4);
+
+      for (var i = 0; i < level.length; i++) {
+
+        if (filter.indexOf && filter.indexOf(level[i].value) == -1) level[i].a = 0;
+
+      }
+
+      for (var i = 0; i < len; i++) {
+
+        var val = features[i].properties.val;
+        var color = getColor(level, val, 1);
+
+        colors.set([
+          color.r / 255,
+          color.g / 255,
+          color.b / 255,
+          color.a
+        ], i * 4);
+
+      }
+
+      this.a_Color = createVertexBuffer(gl, colors);
+
+    },
+    render: function(options) {
+
+      var canvas = this.canvas;
+      var size = this.size;
+      var gl = this.gl;
+
+      var width = options.width || 400;
+      var height = Math.abs((width / size[0]) * size[1]);
+
+      canvas.width = width;
+      canvas.height = height;
+
+      gl.viewport(0, 0, width, height);
+
+      gl.uniform2fv(this.u_Scale, [1, 1]);
+      gl.uniform2fv(this.u_Offset, [0, 0]);
+      
+      bindVertexBuffer.call(this, gl, 'a_Position', 2);
+      bindVertexBuffer.call(this, gl, 'a_Color', 4);
 
       gl.clearColor(0.0, 0.0, 0.0, 0.0);
       gl.clear(gl.COLOR_BUFFER_BIT);
@@ -2427,7 +2486,7 @@
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.a_indices );
       gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_SHORT, 0);
 
-      return this.canvas
+      return canvas
 
     }
   };
@@ -2607,7 +2666,7 @@
     
   }
 
-  var fmtLatLng = function(latlngs, deep, x, y) {
+  var fmtLatLng = function(latlngs, x, y) {
 
     if ( y === void 0 ) {
       
@@ -2621,18 +2680,15 @@
 
     }
 
-    if ( !deep ) {
+    if ( isNumber(latlngs[x]) ) {
 
       return [latlngs[y], latlngs[x]]
 
-
     } 
-
-    deep--;
 
     for (var i = 0, len = latlngs.length; i < len; i++) {
 
-      latlngs[i] = fmtLatLng(latlngs[i], deep);
+      latlngs[i] = fmtLatLng(latlngs[i], x, y);
 
     }
 
@@ -2648,7 +2704,7 @@
 
       var coor = d.features[i].geometry.coordinates;
       
-      d.features[i].geometry.coordinates = fmtLatLng(coor, 2);
+      d.features[i].geometry.coordinates = fmtLatLng(coor);
 
     }
 
@@ -2994,7 +3050,7 @@
       if (!coordinates) throw new Error('coordinates is required');
       if (!Array.isArray(coordinates)) throw new Error('coordinates must be an Array');
       if (coordinates.length < 2) throw new Error('coordinates must be at least 2 numbers long');
-      if (!isNumber(coordinates[0]) || !isNumber(coordinates[1])) throw new Error('coordinates must contain numbers');
+      if (!isNumber$1(coordinates[0]) || !isNumber$1(coordinates[1])) throw new Error('coordinates must contain numbers');
 
       return feature({
           type: 'Point',
@@ -3023,7 +3079,7 @@
       if (!coordinates) throw new Error('coordinates is required');
       if (coordinates.length < 2) throw new Error('coordinates must be an array of two or more positions');
       // Check if first point of LineString contains two numbers
-      if (!isNumber(coordinates[0][1]) || !isNumber(coordinates[0][1])) throw new Error('coordinates must contain numbers');
+      if (!isNumber$1(coordinates[0][1]) || !isNumber$1(coordinates[0][1])) throw new Error('coordinates must contain numbers');
 
       return feature({
           type: 'LineString',
@@ -3143,7 +3199,7 @@
    * turf.isNumber('foo')
    * //=false
    */
-  function isNumber(num) {
+  function isNumber$1(num) {
       return !isNaN(num) && num !== null && !Array.isArray(num);
   }
 
@@ -3188,7 +3244,7 @@
       if (!Array.isArray(bbox)) throw new Error('bbox must be an Array');
       if (bbox.length !== 4 && bbox.length !== 6) throw new Error('bbox must be an Array of 4 or 6 numbers');
       bbox.forEach(function (num) {
-          if (!isNumber(num)) throw new Error('bbox must only contain numbers');
+          if (!isNumber$1(num)) throw new Error('bbox must only contain numbers');
       });
   }
 
@@ -3426,7 +3482,7 @@
       var coordinates = getCoords(obj);
 
       // getCoord() must contain at least two numbers (Point)
-      if (coordinates.length > 1 && isNumber(coordinates[0]) && isNumber(coordinates[1])) {
+      if (coordinates.length > 1 && isNumber$1(coordinates[0]) && isNumber$1(coordinates[1])) {
           return coordinates;
       } else {
           throw new Error('Coordinate is not a valid Point');
@@ -3477,7 +3533,7 @@
    * @returns {boolean} true if Array contains a number
    */
   function containsNumber(coordinates) {
-      if (coordinates.length > 1 && isNumber(coordinates[0]) && isNumber(coordinates[1])) {
+      if (coordinates.length > 1 && isNumber$1(coordinates[0]) && isNumber$1(coordinates[1])) {
           return true;
       }
 
@@ -4053,7 +4109,7 @@
 
       // Input Validation
       if (cellSide === null || cellSide === undefined) throw new Error('cellSide is required');
-      if (!isNumber(cellSide)) throw new Error('cellSide is invalid');
+      if (!isNumber$1(cellSide)) throw new Error('cellSide is invalid');
       if (!bbox) throw new Error('bbox is required');
       if (!Array.isArray(bbox)) throw new Error('bbox must be array');
       if (bbox.length !== 4) throw new Error('bbox must contain 4 numbers');
@@ -4824,8 +4880,8 @@
 
       // validation
       if (!line) throw new Error('line is required');
-      if (!isNumber(resolution)) throw new Error('resolution must be an number');
-      if (!isNumber(sharpness)) throw new Error('sharpness must be an number');
+      if (!isNumber$1(resolution)) throw new Error('resolution must be an number');
+      if (!isNumber$1(sharpness)) throw new Error('sharpness must be an number');
 
       var coords = [];
       var spline = new Spline$1({
@@ -4901,7 +4957,8 @@
 
       var cav = mix(
         [
-          getIsosurface(this.option, this.pointGrid, this.isosurface, config)
+          // getIsosurface.call(this, this.option, this.pointGrid, this.isosurface, config)
+          getIsosurface.call(this, config)
         ],
         this.option,
         config
@@ -4928,7 +4985,7 @@
 
       var cav = mix(
         [
-          getIsoline(this.option, this.isoline, config)
+          getIsoline.call(this, config)
         ],
         this.option,
         config
@@ -4955,8 +5012,8 @@
 
       var cav = mix(
         [
-          getIsosurface(this.option, this.pointGrid, this.isosurface, config),
-          getIsoline(this.option, this.isoline, config)
+          getIsosurface.call(this, config),
+          getIsoline.call(this, config)
         ],
         this.option,
         config
@@ -5037,8 +5094,16 @@
       if ( !existLeaflet() ) return
 
       var d = this.fmtLatlngsIsosurface;
+
+      // console.log(d)
+
+      // d.features = d.features.slice(34)
+      // d.features[0].geometry.coordinates = d.features[0].geometry.coordinates.slice(0, 1)
+
       var group = leafletImage(d, 'polygon', layer, config);
+
       return L.featureGroup(group)
+
     };
 
     // 地图 获取等值线
@@ -5162,14 +5227,21 @@
         pow: opt.pow || 3,
         model: opt.model || 'spherical', // gaussian|exponential|spherical
         clip: opt.clip,
-        fmtClip: opt.clip ? fmtLatLng(JSON.parse(JSON.stringify(opt.clip)), 2, key.clipX, key.clipY) : [],
+        fmtClip: opt.clip ? fmtLatLng(JSON.parse(JSON.stringify(opt.clip)), key.clipX, key.clipY) : [
+          [extent[1], extent[0]],
+          [extent[3], extent[0]],
+          [extent[3], extent[2]],
+          [extent[1], extent[2]],
+          [extent[1], extent[0]],
+        ],
         smooth: opt.smooth,
         ex: ex,
         extent: extent,
         size: size,
         cellWidth: cellWidth,
         level: level,
-        key: key
+        key: key,
+        webgl: opt.webgl == void 0 ? 1 : opt.webgl
 
       };
 
@@ -5368,6 +5440,8 @@
 
           }
 
+          if (opt.webgl) that.isosurfaceWebgl = new IsosurfaceWebgl(opt.ex, pointGrid, level);
+
           if (opt.smooth) {
             
             that.isoline = that.smooth(that.isoline);
@@ -5423,7 +5497,7 @@
 
       }
 
-      this.isosurfaceWebgl = new IsosurfaceWebgl(opt.ex, pointGrid, level);
+      if (opt.webgl) this.isosurfaceWebgl = new IsosurfaceWebgl(opt.ex, pointGrid, level);
 
       if (opt.smooth) {
             

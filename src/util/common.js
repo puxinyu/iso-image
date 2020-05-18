@@ -13,6 +13,18 @@ export var isObject = function(v) {
   
 }
 
+export var isNull = function(v) {
+  
+  return !v && typeof v === "object"
+
+}
+
+export var isNumber = function(v) {
+
+  return !isNaN(parseFloat(v)) && isFinite(v)
+
+}
+
 export var newSpace = function(d, f) {
 
   if (f) return JSON.parse(JSON.stringify(d))

@@ -5,9 +5,9 @@
  * @param {Number} deep 数组层级
  */
 
-import { newSpace } from './common'
+import { newSpace, isNumber } from './common'
 
-export var fmtLatLng = function(latlngs, deep, x, y) {
+export var fmtLatLng = function(latlngs, x, y) {
 
   if ( y === void 0 ) {
     
@@ -21,18 +21,15 @@ export var fmtLatLng = function(latlngs, deep, x, y) {
 
   }
 
-  if ( !deep ) {
+  if ( isNumber(latlngs[x]) ) {
 
     return [latlngs[y], latlngs[x]]
 
-
   } 
-
-  deep--
 
   for (var i = 0, len = latlngs.length; i < len; i++) {
 
-    latlngs[i] = fmtLatLng(latlngs[i], deep)
+    latlngs[i] = fmtLatLng(latlngs[i], x, y)
 
   }
 
@@ -48,7 +45,7 @@ var fmtGeoJson = function(data) {
 
     var coor = d.features[i].geometry.coordinates
     
-    d.features[i].geometry.coordinates = fmtLatLng(coor, 2)
+    d.features[i].geometry.coordinates = fmtLatLng(coor)
 
   }
 

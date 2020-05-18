@@ -44,7 +44,7 @@ var idw = function(points, pointGrid, pow) {
 
     for (var j = m0 * i; j < m0 * i + m0; j++) {
 
-      if ( Math.abs(r[j]) < 0.001 ) {
+      if ( Math.abs(r[j]) < 0.0001 ) {
 
         features[i].properties.val = points[j - m0 * i].v
         ifFind = true
@@ -76,7 +76,7 @@ var idw = function(points, pointGrid, pow) {
   }
 
   return pointGrid
-
+  
 }
 
 onmessage = function(e) {

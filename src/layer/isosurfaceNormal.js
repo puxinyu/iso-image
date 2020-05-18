@@ -6,11 +6,18 @@
  * @param {Object} pointGrid 网格
  * @param {Object} isosurface
  * @param {Object} config 图片配置 width: 图片宽度 opacity: 透明度 gradient 是否渐变, filter 过滤筛选 
+ * 
+ * 备用
+ * 
  */
 
 import getColor from '../calc/getColor'
 
-export default function(opt, pointGrid, isosurface, config) {
+export default function(config) {
+
+  var opt = this.option
+  var pointGrid = this.pointGrid
+  var isosurface = this.isosurface
 
   config = config || {}
 
@@ -33,8 +40,6 @@ export default function(opt, pointGrid, isosurface, config) {
 
   if ( gradient ) {
 
-    console.log(1)
-
     var p = pointGrid.features
     var cellx = size[0] / cellWidth > 1 ? p[Math.abs(Math.ceil(size[1] / cellWidth)) + 1].geometry.coordinates[0] - p[0].geometry.coordinates[0] : cellWidth
     var celly = size[1] / cellWidth > 1 ? p[1].geometry.coordinates[1] - p[0].geometry.coordinates[1] : cellWidth
@@ -54,8 +59,6 @@ export default function(opt, pointGrid, isosurface, config) {
         continue
 
       }
-      
-      console.log(color)
 
       ctx.strokeStyle = ctx.fillStyle =
         'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + color.a + ')'

@@ -7,12 +7,15 @@
  * @param {Object} config 图片配置 width: 图片宽度, filter 过滤筛选
  */
 
-export default function(opt, lines, config) {
+export default function(config) {
 
   config = config || {}
 
+  var opt = this.option
+  var lines = this.isoline
   var size = opt.size
   var ex = opt.ex
+  var text = opt.text
   var width = config.width || 1000
   var height = Math.abs((width / size[0]) * size[1])
   var color = config.isolineColor || '#333'
@@ -65,7 +68,7 @@ export default function(opt, lines, config) {
         var dy = Math.round(y / 16)
         var k = dx + '-' + dy
 
-        if ( !position[k] && !ft ) {
+        if (text && !position[k] && !ft ) {
 
           position[k] = 1
           ft = 1
