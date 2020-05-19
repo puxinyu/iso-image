@@ -804,6 +804,18 @@
 
   };
 
+  var buildExtent = function(extent) {
+
+    return [
+      [extent[1], extent[0]],
+      [extent[3], extent[0]],
+      [extent[3], extent[2]],
+      [extent[1], extent[2]],
+      [extent[1], extent[0]],
+    ]
+
+  };
+
   /**
    * 查询封闭多边形
    * @param {*} catchLine 等值线
@@ -1006,25 +1018,26 @@
 
   var offsetPoints = function(lines) {
 
-    for (let p in lines) {
+    for (var p in lines) {
 
-      let line = lines[p];
+      var line = lines[p];
 
-      for (let i = 0, len = line.length; i < len; i++) {
+      for (var i = 0, len = line.length; i < len; i++) {
 
-        let v = line[i];
+        var v = line[i];
 
         if (v.t != p) continue
 
-        let index = p == 't' || p == 'b' ? 0 : 1;
+        var index = p == 't' || p == 'b' ? 0 : 1;
 
-        for (let j = 0; j < len; j++) {
+        for (var j = 0; j < len; j++) {
 
-          let u = line[j];
+          var u = line[j];
 
           if (v.coor == u.coor || v.d != u.d) continue
 
           if (v.p[index] == u.p[index]) v.p[index] += (u.end[index] - v.end[index]) * 0.1;
+
           if (v.end[index] == u.end[index]) v.end[index] += (u.p[index] - v.p[index]) * 0.1;
 
         }
@@ -1187,11 +1200,7 @@
     var PIndex = [];
     var orderTree = function () {
 
-      if ( !remain.length ) {
-
-        return false
-
-      }
+      if ( !remain.length ) return false
 
       var _remain = [];
 
@@ -1241,11 +1250,7 @@
 
       }
 
-      if ( !_remain.length ) {
-        
-        return false
-
-      }
+      if ( !_remain.length ) return false
 
       remain = _remain;
 
@@ -1813,11 +1818,7 @@
 
   function getLegend(level, config) {
 
-    if ( level.legend < 2 ) {
-
-      return false
-
-    }
+    if ( level.legend < 2 ) return false
 
     config = Object.assign({}, defaultConfig, config);
 
@@ -1828,11 +1829,7 @@
     var legend = document.createElement('canvas');
     var w = dir ? 120 : 340;
 
-    if ( !gradient ) {
-
-      w += 20;
-
-    }
+    if ( !gradient ) w += 20;
 
     var h = dir ? 240 : 50;
 
@@ -1979,7 +1976,7 @@
     var lines = this.isoline;
     var size = opt.size;
     var ex = opt.ex;
-    var text = opt.text;
+    var text = config.text;
     var width = config.width || 1000;
     var height = Math.abs((width / size[0]) * size[1]);
     var color = config.isolineColor || '#333';
@@ -2004,11 +2001,7 @@
 
       var val = d[i].properties.val;
 
-      if (filter && filter.indexOf && filter.indexOf(val) == -1) {
-
-        continue
-
-      }
+      if (filter && filter.indexOf && filter.indexOf(val) == -1) continue
 
       var c = d[i].geometry.coordinates;
       var _color = color == 'level' ? d[i].properties.color : color;
@@ -2112,11 +2105,7 @@
         var color = getColor(level, p[i].properties.val, gradient);
         var val = color.value;
 
-        if (filter && filter.indexOf && filter.indexOf(val) == -1) {
-
-          continue
-
-        }
+        if (filter && filter.indexOf && filter.indexOf(val) == -1) continue
 
         ctx.strokeStyle = ctx.fillStyle =
           'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + color.a + ')';
@@ -2133,11 +2122,7 @@
 
         var val = d[i].properties.val;
 
-        if (filter && filter.indexOf && filter.indexOf(val) == -1) {
-
-          continue
-
-        }
+        if (filter && filter.indexOf && filter.indexOf(val) == -1) continue
 
         var c = d[i].geometry.coordinates;
 
@@ -2203,6 +2188,8 @@
     gl.attachShader(shaderProgram, vertShader);
     gl.attachShader(shaderProgram, fragShader);
     gl.linkProgram(shaderProgram);
+    gl.enable(gl.BLEND);
+    gl.blendFunc( gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA );
     gl.useProgram(shaderProgram);
 
     return shaderProgram
@@ -2249,7 +2236,7 @@
     canvas.width = 1000;
     canvas.height = 1000;
 
-    var gl = canvas.getContext('webgl');
+    var gl = canvas.getContext('experimental-webgl');
 
     if (!gl) {
 
@@ -2261,11 +2248,9 @@
 
     this.canvas = canvas;
     this.gl = gl;
-    
     this.extent = extent;
     this.grid = grid;
     this.level = level;
-
     this.size = [extent[1][0] - extent[0][0], extent[1][1] - extent[0][1]];
 
     this.setup(gl);
@@ -2310,37 +2295,37 @@
     initShaders: function(gl) {
 
       var VSHADER_SOURCE =
-        `
-        attribute vec2 a_Position;
-        attribute vec4 a_Color;
+        [
+          'attribute vec2 a_Position;',
+          'attribute vec4 a_Color;',
 
-        uniform vec2 u_Scale;
-        uniform vec2 u_Offset;
+          'uniform vec2 u_Scale;',
+          'uniform vec2 u_Offset;',
+            
+          'varying vec4 aColor;',
+
+          'void main() {',
+              
+            'aColor = a_Color;',
+
+            'gl_Position = vec4(a_Position * u_Scale + u_Offset, 0.0, 1.0);',
+
+          '}'
+        ].join('\n');
         
-        varying vec4 aColor;
-
-        void main() {
-          
-          aColor = a_Color;
-          // aColor = vec4(a_Position, 0.0, 1.0);
-
-          gl_Position = vec4((a_Position + u_Offset) * u_Scale, 0.0, 1.0);
-
-        }
-      `;
 
       var FSHADER_SOURCE =
-        `
-        precision highp float;
+        [
+          'precision highp float;',
 
-        varying vec4 aColor;
+          'varying vec4 aColor;',
 
-        void main() {
+          'void main() {',
 
-          gl_FragColor = aColor;
+            'gl_FragColor = aColor;',
 
-        }
-      `;
+          '}'
+        ].join('\n');
 
       this.program = createShaderProgram(gl, VSHADER_SOURCE, FSHADER_SOURCE);
 
@@ -2353,7 +2338,7 @@
 
       var extent = this.extent;
       var grid = this.grid;
-      var level = JSON.parse(JSON.stringify(this.level));
+      var level = newSpace(this.level);
       var size = this.size;
       var col = 1;
       var row = 1;
@@ -2431,7 +2416,7 @@
     setFilter: function(filter) {
 
       var gl = this.gl;
-      var level = JSON.parse(JSON.stringify(this.level));
+      var level = newSpace(this.level);
       var grid = this.grid;
       var features = grid.features;
       var len = features.length;
@@ -2439,7 +2424,11 @@
 
       for (var i = 0; i < level.length; i++) {
 
-        if (filter.indexOf && filter.indexOf(level[i].value) == -1) level[i].a = 0;
+        if (filter.indexOf && filter.indexOf(level[i].value) == -1) {
+
+          level[i].a = 0;
+
+        }
 
       }
 
@@ -2467,15 +2456,15 @@
       var gl = this.gl;
 
       var width = options.width || 400;
-      var height = Math.abs((width / size[0]) * size[1]);
+      var height = options.height || Math.abs((width / size[0]) * size[1]);
 
       canvas.width = width;
       canvas.height = height;
 
       gl.viewport(0, 0, width, height);
-
-      gl.uniform2fv(this.u_Scale, [1, 1]);
-      gl.uniform2fv(this.u_Offset, [0, 0]);
+      
+      gl.uniform2fv(this.u_Scale, options.scale || [1, 1]);
+      gl.uniform2fv(this.u_Offset, options.offset || [0, 0]);
       
       bindVertexBuffer.call(this, gl, 'a_Position', 2);
       bindVertexBuffer.call(this, gl, 'a_Color', 4);
@@ -2501,11 +2490,7 @@
 
   function mix(cavs, option, config) {
 
-    if (!cavs[0]) {
-
-      return false
-
-    }
+    if (!cavs[0]) return false
 
     config = config || {};
 
@@ -2606,11 +2591,7 @@
 
     }, opt);
 
-    if (!callBack || !imgs.length || !option.child.length) {
-
-      return false
-
-    }
+    if (!callBack || !imgs.length || !option.child.length) return false
 
     var c = option.child;
     var initInd = 0;
@@ -2630,11 +2611,7 @@
       var t = c[i];
       var v = imgs[t.target];
 
-      if (!v) {
-
-        continue
-
-      }
+      if (!v) continue
 
       initInd++;
 
@@ -2654,11 +2631,7 @@
         ctx.fillRect(0, 0, img.width, img.height);
         ctx.restore();
         
-        if ( !initInd ) {
-
-          return callBack(canvas)
-          
-        }
+        if ( !initInd ) return callBack(canvas)
 
       }, t);
 
@@ -2762,16 +2735,74 @@
             layer = order.layer;
 
             if ( !bounds || (layer._pxBounds && layer._pxBounds.intersects(bounds)) ) {
+              
+              var pattern = layer.options.pattern;
 
-              layer._updatePath();
+              if (pattern && layer._rings[0]) {
+
+                var pb = {
+                  min: {
+                    x: Infinity,
+                    y: Infinity
+                  },
+                  max: {
+                    x: -Infinity,
+                    y: -Infinity
+                  }
+                };
+    
+                for (var i = 0; i < layer._rings[0].length; i++) {
+    
+                  pb.min.x = Math.min(pb.min.x, layer._rings[0][i].x);
+                  pb.min.y = Math.min(pb.min.y, layer._rings[0][i].y);
+                  
+                  pb.max.x = Math.max(pb.max.x, layer._rings[0][i].x);
+                  pb.max.y = Math.max(pb.max.y, layer._rings[0][i].y);
+    
+                }
+    
+                var pbw = pb.max.x - pb.min.x;
+                var pbh = pb.max.y - pb.min.y;
+              
+                var bs = layer._renderer._bounds;
+                var bsw = bs.max.x - bs.min.x;
+                var bsh = bs.max.y - bs.min.y;
+
+                var offset = [
+                  (((pb.max.x + pb.min.x) / 2 - bsw / 2) - bs.min.x) / bsw * 2,
+                  ((bsh / 2 - (pb.max.y + pb.min.y) / 2) + bs.min.y) / bsh * 2
+                ];
+
+                var scale = [pbw / bsw, pbh / bsh];
+
+                _ctx.globalAlpha = layer.options.fillOpacity;
+
+                _ctx.fillStyle = _ctx.createPattern(pattern({
+                  width: bsw,
+                  height: bsh,
+                  offset: offset,
+                  scale: scale
+                }), 'repeat');
+
+                _ctx.translate(bs.min.x, bs.min.y);
+                _ctx.clearRect(0, 0, bsw, bsh);
+                _ctx.fillRect(0, 0, bsw, bsh);
+
+                _ctx.restore();
+
+              } else {
+
+                layer._updatePath();
+
+                _ctx.restore();
+
+              }
 
             }
 
           }
       
           this._drawing = false;
-      
-          _ctx.restore();
           
           this.options.clipLayer && this.options.clipLayer._clip(_ctx);
 
@@ -2806,11 +2837,6 @@
 
           var _ctx = this._ctx;
           _ctx.fillStyle = _ctx.createPattern(ctx.canvas, 'no-repeat');
-
-          // var size = this._bounds.getSize()
-
-          // console.log(this._bounds.min.x, this._bounds.min.y, size.x, size.y)
-          // _ctx.fillRect(this._bounds.min.x, this._bounds.min.y, size.x, size.y)
 
           _ctx.beginPath();
 
@@ -2896,37 +2922,64 @@
 
   function leafletImage(d, type, layer, config) {
 
-    if (!d || !layer) {
+    if (!d || !layer) return false
+      
+    var baseStyle = {
 
-      return false
+      stroke: true,
+      weight: 1,
+      color: '#000',
+      opacity: 0.7,
+      fillOpacity: 0.7,
+      renderer: layer,
+      smoothFactor: 0.5
+      
+    };
+
+    config = config || {};
+
+    var group = [];
+    var gradient = config.gradient;
+    var opt = this.option;
+    var filter = config.filter;
+    var extent = opt.extent;
+
+    if (type == 'polygon' && gradient && this.isosurfaceWebgl) {
+
+      if (filter) this.isosurfaceWebgl.setFilter(filter);
+
+      var _this = this;
+
+      return [
+
+        L[type](
+          buildExtent(extent),
+          Object.assign(
+            {},
+            baseStyle,
+            config,
+            {
+              pattern: function(config) {
+                return _this.isosurfaceWebgl.render(config)
+              }
+            }
+          )
+        )
+
+      ]
 
     }
 
-    var group = [];
-    var filter = config.filter;
-
-    for (var i = 0; d.features[i]; i++) {
+    for (var i = 0, len = d.features.length; i < len; i++) {
 
       var v = d.features[i];
       var val = v.properties.val;
 
-      if (filter && filter.indexOf && filter.indexOf(val) == -1 || !v.geometry.coordinates.length) {
+      if (filter && filter.indexOf && filter.indexOf(val) == -1 || !v.geometry.coordinates.length) continue
 
-        continue
-
-      }
-
-      var style = Object.assign({}, {
-
-        stroke: true,
-        weight: 1,
-        opacity: 0.7,
-        fillOpacity: 0.7,
+      var style = Object.assign({}, baseStyle, {
         color: v.properties.color,
-        fillColor: v.properties.color,
-        renderer: layer,
-        smoothFactor: 0.5
-        
+        fillColor: v.properties.color
       }, config);
 
       var marker = L[type](v.geometry.coordinates, style);
@@ -4949,26 +5002,17 @@
     // 获取等值面
     this.getIsosurface = function(config, key) {
 
-      if ( !this.alow() ) {
-
-        return false
-
-      }
+      if ( !this.alow() ) return false
 
       var cav = mix(
         [
-          // getIsosurface.call(this, this.option, this.pointGrid, this.isosurface, config)
           getIsosurface.call(this, config)
         ],
         this.option,
         config
       );
 
-      if ( key ) {
-        
-        return cav
-
-      } 
+      if ( key ) return cav
 
       return cav.toDataURL(picture)
 
@@ -4977,11 +5021,7 @@
     // 获取等值线
     this.getIsoline = function(config, key) {
 
-      if ( !this.alow() ) {
-
-        return false
-
-      }
+      if ( !this.alow() ) return false
 
       var cav = mix(
         [
@@ -4991,11 +5031,7 @@
         config
       );
 
-      if ( key ) {
-
-        return cav
-
-      }
+      if ( key ) return cav
 
       return cav.toDataURL(picture)
 
@@ -5004,11 +5040,7 @@
     // 获取等值面+等值线
     this.getIsoImage = function(config, key) {
       
-      if ( !this.alow() ) {
-
-        return false
-
-      }
+      if ( !this.alow() ) return false
 
       var cav = mix(
         [
@@ -5019,11 +5051,7 @@
         config
       );
 
-      if ( key ) {
-
-        return cav
-
-      }
+      if ( key ) return cav
 
       return cav.toDataURL(picture)
 
@@ -5035,17 +5063,9 @@
       var level = this.option.level || [];
       var legend = getLegend(level, config);
 
-      if ( !legend ) {
+      if ( !legend ) return false
 
-        return false
-
-      }
-
-      if ( key ) {
-
-        return legend
-
-      }
+      if ( key ) return legend
       
       return legend.toDataURL('image/png')
 
@@ -5054,15 +5074,11 @@
     // 地图图层
     this.layer = function(map, config) {
 
-      if ( !existLeaflet() ) {
-
-        return false
-
-      } 
+      if ( !existLeaflet() ) return false
       
       config = Object.assign({}, {
 
-        padding: 0.5,
+        padding: 0,
         opacity: 0.1
 
       }, config);
@@ -5073,8 +5089,8 @@
         weight: 1,
         opacity: 0.7,
         fillOpacity: 0,
-        color: '#ff0000',
-        fillColor: '#ff0000',
+        color: 'rgba(0, 0, 0, 0)',
+        fillColor: 'rgba(0, 0, 0, 0)',
         renderer: clipLayer
       };
 
@@ -5095,12 +5111,7 @@
 
       var d = this.fmtLatlngsIsosurface;
 
-      // console.log(d)
-
-      // d.features = d.features.slice(34)
-      // d.features[0].geometry.coordinates = d.features[0].geometry.coordinates.slice(0, 1)
-
-      var group = leafletImage(d, 'polygon', layer, config);
+      var group = leafletImage.call(this, d, 'polygon', layer, config);
 
       return L.featureGroup(group)
 
@@ -5108,14 +5119,11 @@
 
     // 地图 获取等值线
     this.getLeafletIsoline = function(layer, config) {
-      if ( !existLeaflet() ) {
 
-        return false
-
-      }
+      if ( !existLeaflet() ) return false
 
       var d = this.fmtLatlngsIsoline;
-      var group = leafletImage(d, 'polyline', layer, config);
+      var group = leafletImage.call(this, d, 'polyline', layer, config);
 
       return L.featureGroup(group)
 
@@ -5124,16 +5132,12 @@
     // 地图 获取等值面+等值线
     this.getLeafletIsoImage = function(layer, config) {
 
-      if ( !existLeaflet() ) {
-
-        return false
-
-      }
+      if ( !existLeaflet() ) return false
 
       var isosurface = this.fmtLatlngsIsosurface;
       var isoline = this.fmtLatlngsIsoline;
-      var isosurfaceGroup = leafletImage(isosurface, 'polygon', layer, config);
-      var isolineGroup = leafletImage(isoline, 'polyline', layer, config);
+      var isosurfaceGroup = leafletImage.call(this, isosurface, 'polygon', layer, config);
+      var isolineGroup = leafletImage.call(this, isoline, 'polyline', layer, config);
       var group = isosurfaceGroup.concat(isolineGroup);
 
       return L.featureGroup(group)
@@ -5143,11 +5147,7 @@
     // 地图 获取图例
     this.getLeafletLegend = function(config) {
 
-      if ( !existLeaflet() ) {
-
-        return false
-
-      }
+      if ( !existLeaflet() ) return false
 
       config = Object.assign({}, {
 
@@ -5159,11 +5159,7 @@
       var level = this.option.level || [];
       var legend = getLegend(level, config);
 
-      if ( !legend ) {
-
-        return false
-
-      }
+      if ( !legend ) return false
 
       config.canvas = legend;
       
@@ -5189,17 +5185,9 @@
       var ex = opt.extent;
       var level = opt.level;
 
-      if ( !ex ) {
+      if ( !ex ) return console.log('缺少参数extent(画布左上右下坐标)')
 
-        return console.log('缺少参数extent(画布左上右下坐标)')
-
-      } 
-
-      if ( !level ) {
-
-        return console.log('缺少参数level(色阶)')
-
-      }
+      if ( !level ) return console.log('缺少参数level(色阶)')
 
       level = fmtLevel(level);
       
@@ -5212,11 +5200,7 @@
       var size = [ex[1][0] - ex[0][0], ex[1][1] - ex[0][1]];
       var cellWidth = opt.cellWidth || signFigures(Math.sqrt(abs$2(size[0] * size[1] / 2000)));
 
-      if ( isIE ) {
-
-        cellWidth *= 2;
-
-      }
+      if ( isIE ) cellWidth *= 2;
 
       var key = Object.assign({}, defaultKeyConfig, opt.keyConfig);
 
@@ -5227,13 +5211,7 @@
         pow: opt.pow || 3,
         model: opt.model || 'spherical', // gaussian|exponential|spherical
         clip: opt.clip,
-        fmtClip: opt.clip ? fmtLatLng(JSON.parse(JSON.stringify(opt.clip)), key.clipX, key.clipY) : [
-          [extent[1], extent[0]],
-          [extent[3], extent[0]],
-          [extent[3], extent[2]],
-          [extent[1], extent[2]],
-          [extent[1], extent[0]],
-        ],
+        fmtClip: opt.clip ? fmtLatLng(newSpace(opt.clip), key.clipX, key.clipY) : buildExtent(extent),
         smooth: opt.smooth,
         ex: ex,
         extent: extent,
@@ -5254,11 +5232,7 @@
 
         for (var i = 0, len = points.length; i < len; i++) {
 
-          if ( points[i][key.v] == void 0 ) {
-
-            continue
-
-          }
+          if ( points[i][key.v] == void 0 ) continue
 
           var _v = points[i][key.v];
           var _x = points[i][key.x];

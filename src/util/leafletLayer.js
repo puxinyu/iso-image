@@ -48,16 +48,74 @@ export var IsoLayer = function(config) {
           layer = order.layer
 
           if ( !bounds || (layer._pxBounds && layer._pxBounds.intersects(bounds)) ) {
+            
+            var pattern = layer.options.pattern
 
-            layer._updatePath()
+            if (pattern && layer._rings[0]) {
+
+              var pb = {
+                min: {
+                  x: Infinity,
+                  y: Infinity
+                },
+                max: {
+                  x: -Infinity,
+                  y: -Infinity
+                }
+              }
+  
+              for (var i = 0; i < layer._rings[0].length; i++) {
+  
+                pb.min.x = Math.min(pb.min.x, layer._rings[0][i].x)
+                pb.min.y = Math.min(pb.min.y, layer._rings[0][i].y)
+                
+                pb.max.x = Math.max(pb.max.x, layer._rings[0][i].x)
+                pb.max.y = Math.max(pb.max.y, layer._rings[0][i].y)
+  
+              }
+  
+              var pbw = pb.max.x - pb.min.x
+              var pbh = pb.max.y - pb.min.y
+            
+              var bs = layer._renderer._bounds
+              var bsw = bs.max.x - bs.min.x
+              var bsh = bs.max.y - bs.min.y
+
+              var offset = [
+                (((pb.max.x + pb.min.x) / 2 - bsw / 2) - bs.min.x) / bsw * 2,
+                ((bsh / 2 - (pb.max.y + pb.min.y) / 2) + bs.min.y) / bsh * 2
+              ]
+
+              var scale = [pbw / bsw, pbh / bsh]
+
+              _ctx.globalAlpha = layer.options.fillOpacity;
+
+              _ctx.fillStyle = _ctx.createPattern(pattern({
+                width: bsw,
+                height: bsh,
+                offset: offset,
+                scale: scale
+              }), 'repeat')
+
+              _ctx.translate(bs.min.x, bs.min.y)
+              _ctx.clearRect(0, 0, bsw, bsh)
+              _ctx.fillRect(0, 0, bsw, bsh)
+
+              _ctx.restore()
+
+            } else {
+
+              layer._updatePath()
+
+              _ctx.restore()
+
+            }
 
           }
 
         }
     
         this._drawing = false
-    
-        _ctx.restore()
         
         this.options.clipLayer && this.options.clipLayer._clip(_ctx)
 
@@ -92,11 +150,6 @@ export var ClipLayer = function(config) {
 
         var _ctx = this._ctx
         _ctx.fillStyle = _ctx.createPattern(ctx.canvas, 'no-repeat')
-
-        // var size = this._bounds.getSize()
-
-        // console.log(this._bounds.min.x, this._bounds.min.y, size.x, size.y)
-        // _ctx.fillRect(this._bounds.min.x, this._bounds.min.y, size.x, size.y)
 
         _ctx.beginPath()
 

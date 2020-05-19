@@ -15,7 +15,7 @@ export default function(config) {
   var lines = this.isoline
   var size = opt.size
   var ex = opt.ex
-  var text = opt.text
+  var text = config.text
   var width = config.width || 1000
   var height = Math.abs((width / size[0]) * size[1])
   var color = config.isolineColor || '#333'
@@ -40,11 +40,7 @@ export default function(config) {
 
     var val = d[i].properties.val
 
-    if (filter && filter.indexOf && filter.indexOf(val) == -1) {
-
-      continue
-
-    }
+    if (filter && filter.indexOf && filter.indexOf(val) == -1) continue
 
     var c = d[i].geometry.coordinates
     var _color = color == 'level' ? d[i].properties.color : color

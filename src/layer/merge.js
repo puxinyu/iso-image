@@ -20,11 +20,7 @@ export default function(isoimages, opt, callBack) {
 
   }, opt)
 
-  if (!callBack || !imgs.length || !option.child.length) {
-
-    return false
-
-  }
+  if (!callBack || !imgs.length || !option.child.length) return false
 
   var c = option.child
   var initInd = 0
@@ -44,11 +40,7 @@ export default function(isoimages, opt, callBack) {
     var t = c[i]
     var v = imgs[t.target]
 
-    if (!v) {
-
-      continue
-
-    }
+    if (!v) continue
 
     initInd++
 
@@ -68,11 +60,7 @@ export default function(isoimages, opt, callBack) {
       ctx.fillRect(0, 0, img.width, img.height)
       ctx.restore()
       
-      if ( !initInd ) {
-
-        return callBack(canvas)
-        
-      }
+      if ( !initInd ) return callBack(canvas)
 
     }, t)
 

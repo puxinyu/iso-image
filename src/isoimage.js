@@ -16,7 +16,7 @@ import mix from './layer/mix'
 import merge from './layer/merge'
 import fmtGeoJson, { fmtLatLng } from './util/fmtGeoJson'
 import { IsoLayer, ClipLayer } from './util/leafletLayer'
-import { isArray, getExtent, signFigures } from './util/common'
+import { isArray, getExtent, signFigures, buildExtent, newSpace } from './util/common'
 import leafletLegend from './util/leafletLegend'
 import leafletImage from './util/leafletImage'
 import fmtLevel from './util/fmtLevel'
@@ -34,8 +34,6 @@ var isIE = 'ActiveXObject' in window
 var min = Math.min
 var max = Math.max
 var abs = Math.abs
-var round = Math.round
-var flot = 1000000
 var defaultKeyConfig = {
   x: 'x',
   y: 'y',
@@ -68,26 +66,17 @@ export default function IsoImage(points, opt, callBack) {
   // 获取等值面
   this.getIsosurface = function(config, key) {
 
-    if ( !this.alow() ) {
-
-      return false
-
-    }
+    if ( !this.alow() ) return false
 
     var cav = mix(
       [
-        // getIsosurface.call(this, this.option, this.pointGrid, this.isosurface, config)
         getIsosurface.call(this, config)
       ],
       this.option,
       config
     )
 
-    if ( key ) {
-      
-      return cav
-
-    } 
+    if ( key ) return cav
 
     return cav.toDataURL(picture)
 
@@ -96,11 +85,7 @@ export default function IsoImage(points, opt, callBack) {
   // 获取等值线
   this.getIsoline = function(config, key) {
 
-    if ( !this.alow() ) {
-
-      return false
-
-    }
+    if ( !this.alow() ) return false
 
     var cav = mix(
       [
@@ -110,11 +95,7 @@ export default function IsoImage(points, opt, callBack) {
       config
     )
 
-    if ( key ) {
-
-      return cav
-
-    }
+    if ( key ) return cav
 
     return cav.toDataURL(picture)
 
@@ -123,11 +104,7 @@ export default function IsoImage(points, opt, callBack) {
   // 获取等值面+等值线
   this.getIsoImage = function(config, key) {
     
-    if ( !this.alow() ) {
-
-      return false
-
-    }
+    if ( !this.alow() ) return false
 
     var cav = mix(
       [
@@ -138,11 +115,7 @@ export default function IsoImage(points, opt, callBack) {
       config
     )
 
-    if ( key ) {
-
-      return cav
-
-    }
+    if ( key ) return cav
 
     return cav.toDataURL(picture)
 
@@ -154,17 +127,9 @@ export default function IsoImage(points, opt, callBack) {
     var level = this.option.level || []
     var legend = getLegend(level, config)
 
-    if ( !legend ) {
+    if ( !legend ) return false
 
-      return false
-
-    }
-
-    if ( key ) {
-
-      return legend
-
-    }
+    if ( key ) return legend
     
     return legend.toDataURL('image/png')
 
@@ -173,15 +138,11 @@ export default function IsoImage(points, opt, callBack) {
   // 地图图层
   this.layer = function(map, config) {
 
-    if ( !existLeaflet() ) {
-
-      return false
-
-    } 
+    if ( !existLeaflet() ) return false
     
     config = Object.assign({}, {
 
-      padding: 0.5,
+      padding: 0,
       opacity: 0.1
 
     }, config)
@@ -192,8 +153,8 @@ export default function IsoImage(points, opt, callBack) {
       weight: 1,
       opacity: 0.7,
       fillOpacity: 0,
-      color: '#ff0000',
-      fillColor: '#ff0000',
+      color: 'rgba(0, 0, 0, 0)',
+      fillColor: 'rgba(0, 0, 0, 0)',
       renderer: clipLayer
     }
 
@@ -214,12 +175,7 @@ export default function IsoImage(points, opt, callBack) {
 
     var d = this.fmtLatlngsIsosurface
 
-    // console.log(d)
-
-    // d.features = d.features.slice(34)
-    // d.features[0].geometry.coordinates = d.features[0].geometry.coordinates.slice(0, 1)
-
-    var group = leafletImage(d, 'polygon', layer, config)
+    var group = leafletImage.call(this, d, 'polygon', layer, config)
 
     return L.featureGroup(group)
 
@@ -227,14 +183,11 @@ export default function IsoImage(points, opt, callBack) {
 
   // 地图 获取等值线
   this.getLeafletIsoline = function(layer, config) {
-    if ( !existLeaflet() ) {
 
-      return false
-
-    }
+    if ( !existLeaflet() ) return false
 
     var d = this.fmtLatlngsIsoline
-    var group = leafletImage(d, 'polyline', layer, config)
+    var group = leafletImage.call(this, d, 'polyline', layer, config)
 
     return L.featureGroup(group)
 
@@ -243,16 +196,12 @@ export default function IsoImage(points, opt, callBack) {
   // 地图 获取等值面+等值线
   this.getLeafletIsoImage = function(layer, config) {
 
-    if ( !existLeaflet() ) {
-
-      return false
-
-    }
+    if ( !existLeaflet() ) return false
 
     var isosurface = this.fmtLatlngsIsosurface
     var isoline = this.fmtLatlngsIsoline
-    var isosurfaceGroup = leafletImage(isosurface, 'polygon', layer, config)
-    var isolineGroup = leafletImage(isoline, 'polyline', layer, config)
+    var isosurfaceGroup = leafletImage.call(this, isosurface, 'polygon', layer, config)
+    var isolineGroup = leafletImage.call(this, isoline, 'polyline', layer, config)
     var group = isosurfaceGroup.concat(isolineGroup)
 
     return L.featureGroup(group)
@@ -262,11 +211,7 @@ export default function IsoImage(points, opt, callBack) {
   // 地图 获取图例
   this.getLeafletLegend = function(config) {
 
-    if ( !existLeaflet() ) {
-
-      return false
-
-    }
+    if ( !existLeaflet() ) return false
 
     config = Object.assign({}, {
 
@@ -278,11 +223,7 @@ export default function IsoImage(points, opt, callBack) {
     var level = this.option.level || []
     var legend = getLegend(level, config)
 
-    if ( !legend ) {
-
-      return false
-
-    }
+    if ( !legend ) return false
 
     config.canvas = legend
     
@@ -308,17 +249,9 @@ IsoImage.prototype = {
     var ex = opt.extent
     var level = opt.level
 
-    if ( !ex ) {
+    if ( !ex ) return console.log('缺少参数extent(画布左上右下坐标)')
 
-      return console.log('缺少参数extent(画布左上右下坐标)')
-
-    } 
-
-    if ( !level ) {
-
-      return console.log('缺少参数level(色阶)')
-
-    }
+    if ( !level ) return console.log('缺少参数level(色阶)')
 
     level = fmtLevel(level)
     
@@ -331,11 +264,7 @@ IsoImage.prototype = {
     var size = [ex[1][0] - ex[0][0], ex[1][1] - ex[0][1]]
     var cellWidth = opt.cellWidth || signFigures(Math.sqrt(abs(size[0] * size[1] / 2000)))
 
-    if ( isIE ) {
-
-      cellWidth *= 2
-
-    }
+    if ( isIE ) cellWidth *= 2
 
     var key = Object.assign({}, defaultKeyConfig, opt.keyConfig)
 
@@ -346,13 +275,7 @@ IsoImage.prototype = {
       pow: opt.pow || 3,
       model: opt.model || 'spherical', // gaussian|exponential|spherical
       clip: opt.clip,
-      fmtClip: opt.clip ? fmtLatLng(JSON.parse(JSON.stringify(opt.clip)), key.clipX, key.clipY) : [
-        [extent[1], extent[0]],
-        [extent[3], extent[0]],
-        [extent[3], extent[2]],
-        [extent[1], extent[2]],
-        [extent[1], extent[0]],
-      ],
+      fmtClip: opt.clip ? fmtLatLng(newSpace(opt.clip), key.clipX, key.clipY) : buildExtent(extent),
       smooth: opt.smooth,
       ex: ex,
       extent: extent,
@@ -373,11 +296,7 @@ IsoImage.prototype = {
 
       for (var i = 0, len = points.length; i < len; i++) {
 
-        if ( points[i][key.v] == void 0 ) {
-
-          continue
-
-        }
+        if ( points[i][key.v] == void 0 ) continue
 
         var _v = points[i][key.v]
         var _x = points[i][key.x]

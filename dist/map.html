@@ -15,7 +15,7 @@
     <div id="map" ></div>
     <script>
       var map = L.map('map', {
-        center: [25.763889, 119.469167],
+        center: [25.9, 119.3],
         crs:L.CRS.EPSG3857,
         zoom: 8,
         maxZoom: 18,
@@ -119,7 +119,14 @@
                   type: type == 'kriging' ? 'kriging' : 'idw',
                   // worker: './worker',
                   extent: [[118.3, 26.8], [120.3, 25]],
-                  // clip: clip,
+                  clip: clip,
+                  // clip: [
+                  //   {lat: 0, lng: 100},
+                  //   {lat: 90, lng: 100},
+                  //   {lat: 90, lng: 180},
+                  //   {lat: 0, lng: 180},
+                  //   {lat: 0, lng: 100}
+                  // ],
                   smooth: true,
                   level: [
                     { value: 0, color: '#ffffff', unit: 'mm' },
@@ -141,13 +148,18 @@
                   },
                   webgl: 1
                 }, function(that) {
+
+                  // var canvasLayer0 = that.layer(map)
+                  // that.getLeafletIsosurface(canvasLayer0).addTo(map)
                   
                   var canvasLayer = that.layer(map) // .addTo(map)
 
                   // getLeafletIsosurface getLeafletIsoline getLeafletIsoImage getLeafletLegend
-                  that.getLeafletIsosurface(canvasLayer, {
-                    // filter: [5, 25],
-                    // color: "#333"
+                  that.getLeafletIsoImage(canvasLayer, {
+                    // filter: [5, 10],
+                    color: "#333",
+                    fillOpacity: 0.8,
+                    gradient: 1
                   }).addTo(map)
 
                   that.getLeafletLegend({
@@ -155,29 +167,7 @@
                     // gradient: false,
                     // direction: 'horizontal'
                   }).addTo(map)
-
-                  var imgUrl1 = that.getIsoImage({
-                    width: 400,
-                    opacity: 1,
-                    gradient: 0
-                  })
-
-                  var img = new Image()
-
-                  img.src = imgUrl1
-                  document.body.appendChild(img)
-
-                  var imgUrl2 = that.getIsoImage({
-                    width: 400,
-                    opacity: 1,
-                    gradient: 1
-                  })
-
-                  var img = new Image()
-
-                  img.src = imgUrl2
-                  document.body.appendChild(img)
-
+                  
                   // var style = {
                   //   stroke: true,
                   //   weight: 1,

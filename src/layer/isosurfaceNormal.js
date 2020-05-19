@@ -54,11 +54,7 @@ export default function(config) {
       var color = getColor(level, p[i].properties.val, gradient)
       var val = color.value
 
-      if (filter && filter.indexOf && filter.indexOf(val) == -1) {
-
-        continue
-
-      }
+      if (filter && filter.indexOf && filter.indexOf(val) == -1) continue
 
       ctx.strokeStyle = ctx.fillStyle =
         'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + color.a + ')'
@@ -75,11 +71,7 @@ export default function(config) {
 
       var val = d[i].properties.val
 
-      if (filter && filter.indexOf && filter.indexOf(val) == -1) {
-
-        continue
-
-      }
+      if (filter && filter.indexOf && filter.indexOf(val) == -1) continue
 
       var c = d[i].geometry.coordinates
 

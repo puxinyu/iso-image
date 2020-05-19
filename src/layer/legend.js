@@ -17,11 +17,7 @@ var defaultConfig = {
 
 export default function(level, config) {
 
-  if ( level.legend < 2 ) {
-
-    return false
-
-  }
+  if ( level.legend < 2 ) return false
 
   config = Object.assign({}, defaultConfig, config)
 
@@ -32,11 +28,7 @@ export default function(level, config) {
   var legend = document.createElement('canvas')
   var w = dir ? 120 : 340
 
-  if ( !gradient ) {
-
-    w += 20
-
-  }
+  if ( !gradient ) w += 20
 
   var h = dir ? 240 : 50
 

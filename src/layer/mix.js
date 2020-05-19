@@ -10,11 +10,7 @@ import { isArray } from '../util/common'
 
 export default function(cavs, option, config) {
 
-  if (!cavs[0]) {
-
-    return false
-
-  }
+  if (!cavs[0]) return false
 
   config = config || {}
 

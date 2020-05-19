@@ -45,25 +45,26 @@ var calcDir = function (p, ex) {
 
 var offsetPoints = function(lines) {
 
-  for (let p in lines) {
+  for (var p in lines) {
 
-    let line = lines[p]
+    var line = lines[p]
 
-    for (let i = 0, len = line.length; i < len; i++) {
+    for (var i = 0, len = line.length; i < len; i++) {
 
-      let v = line[i]
+      var v = line[i]
 
       if (v.t != p) continue
 
-      let index = p == 't' || p == 'b' ? 0 : 1
+      var index = p == 't' || p == 'b' ? 0 : 1
 
-      for (let j = 0; j < len; j++) {
+      for (var j = 0; j < len; j++) {
 
-        let u = line[j]
+        var u = line[j]
 
         if (v.coor == u.coor || v.d != u.d) continue
 
         if (v.p[index] == u.p[index]) v.p[index] += (u.end[index] - v.end[index]) * 0.1
+
         if (v.end[index] == u.end[index]) v.end[index] += (u.p[index] - v.p[index]) * 0.1
 
       }
@@ -226,11 +227,7 @@ export default function(lines, extent, pointGrid, level) {
   var PIndex = []
   var orderTree = function () {
 
-    if ( !remain.length ) {
-
-      return false
-
-    }
+    if ( !remain.length ) return false
 
     var _remain = []
 
@@ -280,11 +277,7 @@ export default function(lines, extent, pointGrid, level) {
 
     }
 
-    if ( !_remain.length ) {
-      
-      return false
-
-    }
+    if ( !_remain.length ) return false
 
     remain = _remain
 

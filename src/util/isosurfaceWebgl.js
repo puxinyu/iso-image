@@ -5,6 +5,7 @@
  */
 
 import getColor from '../calc/getColor'
+import { newSpace } from './common'
 
 var createShader = function(gl, sourceCode, type) {
 
@@ -35,6 +36,8 @@ var createShaderProgram = function(gl, VSHADER_SOURCE, FSHADER_SOURCE) {
   gl.attachShader(shaderProgram, vertShader)
   gl.attachShader(shaderProgram, fragShader)
   gl.linkProgram(shaderProgram)
+  gl.enable(gl.BLEND)
+  gl.blendFunc( gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA )
   gl.useProgram(shaderProgram)
 
   return shaderProgram
@@ -81,7 +84,7 @@ function IsosurfaceWebgl(extent, grid, level) {
   canvas.width = 1000
   canvas.height = 1000
 
-  var gl = canvas.getContext('webgl')
+  var gl = canvas.getContext('experimental-webgl')
 
   if (!gl) {
 
@@ -93,11 +96,9 @@ function IsosurfaceWebgl(extent, grid, level) {
 
   this.canvas = canvas
   this.gl = gl
-  
   this.extent = extent
   this.grid = grid
   this.level = level
-
   this.size = [extent[1][0] - extent[0][0], extent[1][1] - extent[0][1]]
 
   this.setup(gl)
@@ -142,37 +143,37 @@ IsosurfaceWebgl.prototype = {
   initShaders: function(gl) {
 
     var VSHADER_SOURCE =
-      `
-        attribute vec2 a_Position;
-        attribute vec4 a_Color;
+      [
+        'attribute vec2 a_Position;',
+        'attribute vec4 a_Color;',
 
-        uniform vec2 u_Scale;
-        uniform vec2 u_Offset;
-        
-        varying vec4 aColor;
-
-        void main() {
+        'uniform vec2 u_Scale;',
+        'uniform vec2 u_Offset;',
           
-          aColor = a_Color;
-          // aColor = vec4(a_Position, 0.0, 1.0);
+        'varying vec4 aColor;',
 
-          gl_Position = vec4((a_Position + u_Offset) * u_Scale, 0.0, 1.0);
+        'void main() {',
+            
+          'aColor = a_Color;',
 
-        }
-      `
+          'gl_Position = vec4(a_Position * u_Scale + u_Offset, 0.0, 1.0);',
+
+        '}'
+      ].join('\n')
+      
 
     var FSHADER_SOURCE =
-      `
-        precision highp float;
+      [
+        'precision highp float;',
 
-        varying vec4 aColor;
+        'varying vec4 aColor;',
 
-        void main() {
+        'void main() {',
 
-          gl_FragColor = aColor;
+          'gl_FragColor = aColor;',
 
-        }
-      `
+        '}'
+      ].join('\n')
 
     this.program = createShaderProgram(gl, VSHADER_SOURCE, FSHADER_SOURCE)
 
@@ -185,7 +186,7 @@ IsosurfaceWebgl.prototype = {
 
     var extent = this.extent
     var grid = this.grid
-    var level = JSON.parse(JSON.stringify(this.level))
+    var level = newSpace(this.level)
     var size = this.size
     var col = 1
     var row = 1
@@ -263,7 +264,7 @@ IsosurfaceWebgl.prototype = {
   setFilter: function(filter) {
 
     var gl = this.gl
-    var level = JSON.parse(JSON.stringify(this.level))
+    var level = newSpace(this.level)
     var grid = this.grid
     var features = grid.features
     var len = features.length
@@ -271,7 +272,11 @@ IsosurfaceWebgl.prototype = {
 
     for (var i = 0; i < level.length; i++) {
 
-      if (filter.indexOf && filter.indexOf(level[i].value) == -1) level[i].a = 0
+      if (filter.indexOf && filter.indexOf(level[i].value) == -1) {
+
+        level[i].a = 0
+
+      }
 
     }
 
@@ -299,15 +304,15 @@ IsosurfaceWebgl.prototype = {
     var gl = this.gl
 
     var width = options.width || 400
-    var height = Math.abs((width / size[0]) * size[1])
+    var height = options.height || Math.abs((width / size[0]) * size[1])
 
     canvas.width = width
     canvas.height = height
 
     gl.viewport(0, 0, width, height)
-
-    gl.uniform2fv(this.u_Scale, [1, 1])
-    gl.uniform2fv(this.u_Offset, [0, 0])
+    
+    gl.uniform2fv(this.u_Scale, options.scale || [1, 1])
+    gl.uniform2fv(this.u_Offset, options.offset || [0, 0])
     
     bindVertexBuffer.call(this, gl, 'a_Position', 2)
     bindVertexBuffer.call(this, gl, 'a_Color', 4)

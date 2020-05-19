@@ -1,6 +1,6 @@
 # iso-image
  * 等值面 等值线 生成
- * 支持渐变（除地图失量叠加）
+ * 支持渐变
  * 支持反距离平方权重法与克里金插值算法
  * 支持 worker 后台计算
 
@@ -30,10 +30,11 @@
 |extent|Array|计算区域|
 |clip|Array|裁剪边界|
 |level|Array|色值等级|
-|cellWidth|Number|计算精度 尽量确保总网格数在 2000 - 20000 之间 太大太小都可能出现堆栈溢出 导致失败|
+|cellWidth|Number|计算精度 尽量确保总网格数在 2000 - 20000 之间 太大太小都可能出现堆栈溢出 导致失败 (default: 自动计算)|
 |keyConfig|Object|data/clip 数据 key 配置|
 |worker|String|worker 文件目录|
 |smooth|Boolean|平滑|
+|webgl|Boolean|是否开启webgl绘制渐变（default: true）|
 
  * function
 
@@ -59,3 +60,4 @@
 ![基本](./dist/image/image1.png)
 ![渐变](./dist/image/image2.png)
 ![地图](./dist/image/image3.png)
+![地图](./dist/image/image4.png)
