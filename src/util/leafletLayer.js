@@ -1,5 +1,5 @@
 /**
- * leaflet 失量叠加图层
+ * leaflet 地图叠加图层
  * @author kongkongbuding
  * @since 2019.08.08
  * @param {*} config 
@@ -35,7 +35,7 @@ export var IsoLayer = function(config) {
 
           var size = bounds.getSize()
 
-          _ctx.beginPath();
+          _ctx.beginPath()
           _ctx.rect(bounds.min.x, bounds.min.y, size.x, size.y)
           _ctx.clip()
 
@@ -78,12 +78,15 @@ export var IsoLayer = function(config) {
               var pbh = pb.max.y - pb.min.y
             
               var bs = layer._renderer._bounds
+
               var bsw = bs.max.x - bs.min.x
               var bsh = bs.max.y - bs.min.y
 
               var offset = [
+
                 (((pb.max.x + pb.min.x) / 2 - bsw / 2) - bs.min.x) / bsw * 2,
                 ((bsh / 2 - (pb.max.y + pb.min.y) / 2) + bs.min.y) / bsh * 2
+                
               ]
 
               var scale = [pbw / bsw, pbh / bsh]
